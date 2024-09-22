@@ -13,14 +13,20 @@
 #include <chrono>
 #include <list>
 
+#include "external/marray/marray/marray.hpp"
+#include "external/marray/marray/dpd/dpd_marray.hpp"
+#include "external/marray/marray/indexed/indexed_marray.hpp"
+#include "external/marray/marray/indexed_dpd/indexed_dpd_marray.hpp"
+#include "external/marray/marray/expression.hpp"
+
 #include "tblis.h"
-#include "util/random.hpp"
-#include "util/tensor.hpp"
-#include "util/macros.h"
+#include "random.hpp"
+
 #include "external/stl_ext/stl_ext/algorithm.hpp"
 #include "external/stl_ext/stl_ext/iostream.hpp"
-#include "internal/3t/dense/mult.hpp"
-#include "internal/3t/dpd/mult.hpp"
+
+#include "frame/3t/dense/mult.hpp"
+#include "frame/3t/dpd/mult.hpp"
 
 #include "external/catch/catch.hpp"
 
@@ -30,6 +36,7 @@ using std::max;
 using std::numeric_limits;
 using std::pair;
 using std::map;
+using std::vector;
 using std::swap;
 using std::chrono::duration_cast;
 using std::chrono::high_resolution_clock;
@@ -38,8 +45,9 @@ using std::istringstream;
 using namespace stl_ext;
 using namespace tblis;
 using namespace tblis::internal;
-using namespace tblis::detail;
-using namespace tblis::slice;
+using namespace tblis::internal;
+using namespace MArray;
+using namespace MArray::slice;
 
 #define INFO_OR_PRINT(...) INFO(__VA_ARGS__); //cout << __VA_ARGS__ << endl;
 
@@ -59,6 +67,7 @@ INFO_OR_PRINT("dense stride_" #t " = " << t.dense_strides()); \
 INFO_OR_PRINT("idx len_" #t "      = " << t.indexed_lengths()); \
 INFO_OR_PRINT("data_" #t "         = \n" << t.data()); \
 INFO_OR_PRINT("indices_" #t "      = \n" << t.indices()); \
+INFO_OR_PRINT("factor_" #t "       = \n" << t.factors()); \
 INFO_OR_PRINT("idx_" #t "          = " << substr(idx_##t,0,t.dense_dimension()) << \
                                    " " << substr(idx_##t,t.dense_dimension()));
 
@@ -71,12 +80,29 @@ INFO_OR_PRINT("idx len_" #t "     = " << t.indexed_lengths()); \
 INFO_OR_PRINT("nidx_" #t "        = " << t.num_indices()); \
 INFO_OR_PRINT("data_" #t "        = \n" << t.data()); \
 INFO_OR_PRINT("indices_" #t "     = \n" << t.indices()); \
-INFO_OR_PRINT("idx_" #t "          = " << substr(idx_##t,0,t.dense_dimension()) << \
+INFO_OR_PRINT("factor_" #t "      = \n" << t.factors()); \
+INFO_OR_PRINT("idx_" #t "         = " << substr(idx_##t,0,t.dense_dimension()) << \
                                    " " << substr(idx_##t,t.dense_dimension()));
+
+constexpr bool is_dpd(auto&& x) requires requires { x.irrep(); } { return true; }
+constexpr bool is_dpd(auto&&, ...) { return false; }
 
 #define PRINT_TENSOR(t) \
 cout << "\n" #t ":\n"; \
-vary(t).for_each_element( \
+if constexpr (MArray::is_marray<decltype(t)>::value) \
+t.template view<DYNAMIC>().for_each_element( \
+[](auto&& e, auto&& pos) \
+{ \
+    if (std::abs(e) > 1e-13) cout << pos << " " << e << endl; \
+}); \
+else if constexpr (is_dpd(t)) \
+t.view().for_each_element( \
+[](auto&& e, auto&& irr, auto&& pos) \
+{ \
+    if (std::abs(e) > 1e-13) cout << irr << " " << pos << " " << e << endl; \
+}); \
+else \
+t.view().for_each_element( \
 [](auto&& e, auto&& pos) \
 { \
     if (std::abs(e) > 1e-13) cout << pos << " " << e << endl; \
@@ -174,39 +200,39 @@ struct templated_test_case_runner<Body>
 };
 
 #define REPLICATED_TEST_CASE(name, ntrial) \
-static void TBLIS_PASTE(__replicated_test_case_body_, name)(); \
+static void PASTECH(__replicated_test_case_body_, name)(); \
 TEST_CASE(#name) \
 { \
     for (int trial = 0;trial < ntrial;trial++) \
     { \
         INFO_OR_PRINT("Trial " << (trial+1) << " of " << ntrial); \
-        TBLIS_PASTE(__replicated_test_case_body_, name)(); \
+        PASTECH(__replicated_test_case_body_, name)(); \
     } \
 } \
-static void TBLIS_PASTE(__replicated_test_case_body_, name)()
+static void PASTECH(__replicated_test_case_body_, name)()
 
 #define TEMPLATED_TEST_CASE(name, T, ...) \
-template <typename T> struct TBLIS_PASTE(__templated_test_case_body_, name) \
+template <typename T> struct PASTECH(__templated_test_case_body_, name) \
 { \
     static void run(); \
 }; \
 TEST_CASE(#name) \
 { \
-    templated_test_case_runner<TBLIS_PASTE(__templated_test_case_body_, name), __VA_ARGS__>::run(); \
+    templated_test_case_runner<PASTECH(__templated_test_case_body_, name), __VA_ARGS__>::run(); \
 } \
-template <typename T> void TBLIS_PASTE(__templated_test_case_body_, name)<T>::run()
+template <typename T> void PASTECH(__templated_test_case_body_, name)<T>::run()
 
 #define REPLICATED_TEMPLATED_TEST_CASE(name, ntrial, T, ...) \
-template <typename T> static void TBLIS_PASTE(__replicated_templated_test_case_body_, name)(); \
+template <typename T> static void PASTECH(__replicated_templated_test_case_body_, name)(); \
 TEMPLATED_TEST_CASE(name, T, __VA_ARGS__) \
 { \
     for (int trial = 0;trial < ntrial;trial++) \
     { \
         INFO_OR_PRINT("Trial " << (trial+1) << " of " << ntrial); \
-        TBLIS_PASTE(__replicated_templated_test_case_body_, name)<T>(); \
+        PASTECH(__replicated_templated_test_case_body_, name)<T>(); \
     } \
 } \
-template <typename T> static void TBLIS_PASTE(__replicated_templated_test_case_body_, name)()
+template <typename T> static void PASTECH(__replicated_templated_test_case_body_, name)()
 
 constexpr static int ulp_factor = 32;
 

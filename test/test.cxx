@@ -91,12 +91,14 @@ void gemm_ref(T alpha, matrix_view<const T> A,
     }
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template \
 void gemm_ref(T alpha, matrix_view<const T> A, \
                        matrix_view<const T> B, \
               T  beta,       matrix_view<T> C);
-#include "configs/foreach_type.h"
+
+DO_FOREACH_TYPE
 
 template <typename T>
 void gemm_ref(T alpha, matrix_view<const T> A,
@@ -160,13 +162,15 @@ void gemm_ref(T alpha, matrix_view<const T> A,
     }
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template \
 void gemm_ref(T alpha, matrix_view<const T> A, \
                           row_view<const T> D, \
                        matrix_view<const T> B, \
               T  beta,       matrix_view<T> C);
-#include "configs/foreach_type.h"
+
+DO_FOREACH_TYPE
 
 /*
  * Creates a matrix whose total storage size is between N/4
@@ -197,9 +201,10 @@ void random_matrix(stride_type N, len_type m_min, len_type n_min, matrix<T>& t)
     while (it.next(data)) *data = random_unit<T>();
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template void random_matrix(stride_type N, len_type m_min, len_type n_min, matrix<T>& t);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 /*
  * Creates a matrix, whose total storage size is between N/4
@@ -214,9 +219,10 @@ void random_matrix(stride_type N, matrix<T>& t)
     random_matrix(N, 0, 0, t);
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template void random_matrix(stride_type N, matrix<T>& t);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 /*
  * Creates a tensor of d dimensions, whose total storage size is between N/2^d
@@ -266,9 +272,10 @@ void random_tensor(stride_type N, int d, const vector<len_type>& len_min, marray
     randomize_tensor(A);
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template void random_tensor(stride_type N, int d, const vector<len_type>& len_min, marray<T>& A);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 template <typename T>
 void random_tensor(stride_type N, int d, int nirrep, const vector<len_type>& len_min, dpd_marray<T>& A)
@@ -292,9 +299,10 @@ void random_tensor(stride_type N, int d, int nirrep, const vector<len_type>& len
     randomize_tensor(A);
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template void random_tensor(stride_type N, int d, int nirrep, const vector<len_type>& len_min, dpd_marray<T>& A);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 template <typename T>
 void random_tensor(stride_type N, int d, const vector<len_type>& len_min, indexed_marray<T>& A)
@@ -311,9 +319,10 @@ void random_tensor(stride_type N, int d, const vector<len_type>& len_min, indexe
         const_cast<T&>(A.factor(i)) = random_choice({1.0, 0.5, 0.0});
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template void random_tensor(stride_type N, int d, const vector<len_type>& len_min, indexed_marray<T>& A);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 template <typename T>
 void random_tensor(stride_type N, int d, int nirrep, const vector<len_type>& len_min, indexed_dpd_marray<T>& A)
@@ -356,9 +365,10 @@ void random_tensor(stride_type N, int d, int nirrep, const vector<len_type>& len
         const_cast<T&>(A.factor(i)) = random_choice({1.0, 0.5, 0.0});
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template void random_tensor(stride_type N, int d, int nirrep, const vector<len_type>& len_min, indexed_dpd_marray<T>& A);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 template <typename T>
 void random_tensor(stride_type N, int d, const vector<len_type>& len_min, dpd_marray<T>& A)
@@ -366,9 +376,10 @@ void random_tensor(stride_type N, int d, const vector<len_type>& len_min, dpd_ma
     random_tensor(N, d, 1 << random_number(2), len_min, A);
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template void random_tensor(stride_type N, int d, const vector<len_type>& len_min, dpd_marray<T>& A);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 template <typename T>
 void random_tensor(stride_type N, int d, const vector<len_type>& len_min, indexed_dpd_marray<T>& A)
@@ -376,9 +387,10 @@ void random_tensor(stride_type N, int d, const vector<len_type>& len_min, indexe
     random_tensor(N, d, 1 << random_number(2), len_min, A);
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template void random_tensor(stride_type N, int d, const vector<len_type>& len_min, indexed_dpd_marray<T>& A);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 /*
  * Creates a tensor of d dimensions, whose total storage size is between N/2
@@ -415,7 +427,7 @@ void random_lengths(stride_type N,
         for (auto j : range(ndim_A_only)) types_A[i++] = {TYPE_A, j};
         for (auto j : range(ndim_AB    )) types_A[i++] = {TYPE_AB, j};
     }
-    shuffle(types_A.begin(), types_A.end());
+    shuffle(types_A.begin(), types_A.end(), rand_engine);
 
     vector<pair<index_type,int>> types_B(ndim_B);
     {
@@ -423,10 +435,10 @@ void random_lengths(stride_type N,
         for (auto j : range(ndim_B_only)) types_B[i++] = {TYPE_B, j};
         for (auto j : range(ndim_AB    )) types_B[i++] = {TYPE_AB, j};
     }
-    shuffle(types_B.begin(), types_B.end());
+    shuffle(types_B.begin(), types_B.end(), rand_engine);
 
     label_vector idx = range<label_type>('a', static_cast<char>('a'+ndim_A+ndim_B-ndim_AB));
-    shuffle(idx.begin(), idx.end());
+    shuffle(idx.begin(), idx.end(), rand_engine);
 
     auto c = 0;
     label_vector idx_A_only(ndim_A_only, 0);
@@ -508,6 +520,7 @@ void random_tensors(stride_type N,
     randomize_tensor(B);
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template \
 void random_tensors(stride_type N, \
@@ -515,7 +528,7 @@ void random_tensors(stride_type N, \
                     int ndim_AB, \
                     marray<T>& A, label_vector& idx_A, \
                     marray<T>& B, label_vector& idx_B);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 template <typename T>
 void random_tensors(stride_type N,
@@ -568,6 +581,7 @@ void random_tensors(stride_type N,
     randomize_tensor(B);
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template \
 void random_tensors(stride_type N, \
@@ -575,7 +589,7 @@ void random_tensors(stride_type N, \
                     int ndim_AB, \
                     dpd_marray<T>& A, label_vector& idx_A, \
                     dpd_marray<T>& B, label_vector& idx_B);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 template <typename T>
 void random_tensors(stride_type N,
@@ -606,6 +620,7 @@ void random_tensors(stride_type N,
         const_cast<T&>(B.factor(i)) = random_choice({1.0, 0.5, 0.0});
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template \
 void random_tensors(stride_type N, \
@@ -613,7 +628,7 @@ void random_tensors(stride_type N, \
                     int ndim_AB, \
                     indexed_marray<T>& A, label_vector& idx_A, \
                     indexed_marray<T>& B, label_vector& idx_B);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 template <typename T>
 void random_tensors(stride_type N,
@@ -710,6 +725,7 @@ void random_tensors(stride_type N,
         const_cast<T&>(B.factor(i)) = random_choice({1.0, 0.5, 0.0});
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template \
 void random_tensors(stride_type N, \
@@ -717,7 +733,7 @@ void random_tensors(stride_type N, \
                     int ndim_AB, \
                     indexed_dpd_marray<T>& A, label_vector& idx_A, \
                     indexed_dpd_marray<T>& B, label_vector& idx_B);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 void random_lengths(stride_type N,
                     int ndim_A_only, int ndim_B_only, int ndim_C_only,
@@ -739,7 +755,7 @@ void random_lengths(stride_type N,
         for (auto j : range(ndim_AC    )) types_A[i++] = {TYPE_AC, j};
         for (auto j : range(ndim_ABC   )) types_A[i++] = {TYPE_ABC, j};
     }
-    shuffle(types_A.begin(), types_A.end());
+    shuffle(types_A.begin(), types_A.end(), rand_engine);
 
     vector<pair<index_type,int>> types_B(ndim_B);
     {
@@ -749,7 +765,7 @@ void random_lengths(stride_type N,
         for (auto j : range(ndim_BC    )) types_B[i++] = {TYPE_BC, j};
         for (auto j : range(ndim_ABC   )) types_B[i++] = {TYPE_ABC, j};
     }
-    shuffle(types_B.begin(), types_B.end());
+    shuffle(types_B.begin(), types_B.end(), rand_engine);
 
     vector<pair<index_type,int>> types_C(ndim_C);
     {
@@ -759,12 +775,12 @@ void random_lengths(stride_type N,
         for (auto j : range(ndim_BC    )) types_C[i++] = {TYPE_BC, j};
         for (auto j : range(ndim_ABC   )) types_C[i++] = {TYPE_ABC, j};
     }
-    shuffle(types_C.begin(), types_C.end());
+    shuffle(types_C.begin(), types_C.end(), rand_engine);
 
     label_vector idx =
         range<label_type>('a', static_cast<char>('a'+ndim_A_only+ndim_B_only+ndim_C_only+
                       ndim_AB+ndim_AC+ndim_BC+ndim_ABC));
-    shuffle(idx.begin(), idx.end());
+    shuffle(idx.begin(), idx.end(), rand_engine);
 
     auto c = 0;
     label_vector idx_A_only(ndim_A_only, 0);
@@ -1003,6 +1019,7 @@ void random_tensors(stride_type N,
     randomize_tensor(C);
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template \
 void random_tensors(stride_type N, \
@@ -1012,7 +1029,7 @@ void random_tensors(stride_type N, \
                     marray<T>& A, label_vector& idx_A, \
                     marray<T>& B, label_vector& idx_B, \
                     marray<T>& C, label_vector& idx_C);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 template <typename T>
 void random_tensors(stride_type N,
@@ -1102,6 +1119,7 @@ void random_tensors(stride_type N,
     randomize_tensor(C);
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template \
 void random_tensors(stride_type N, \
@@ -1111,7 +1129,7 @@ void random_tensors(stride_type N, \
                     dpd_marray<T>& A, label_vector& idx_A, \
                     dpd_marray<T>& B, label_vector& idx_B, \
                     dpd_marray<T>& C, label_vector& idx_C);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 template <typename T>
 void random_tensors(stride_type N,
@@ -1151,6 +1169,7 @@ void random_tensors(stride_type N,
         const_cast<T&>(C.factor(i)) = random_choice({1.0, 0.5, 0.0});
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template \
 void random_tensors(stride_type N, \
@@ -1160,7 +1179,7 @@ void random_tensors(stride_type N, \
                     indexed_marray<T>& A, label_vector& idx_A, \
                     indexed_marray<T>& B, label_vector& idx_B, \
                     indexed_marray<T>& C, label_vector& idx_C);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 template <typename T>
 void random_tensors(stride_type N,
@@ -1326,6 +1345,7 @@ void random_tensors(stride_type N,
         const_cast<T&>(C.factor(i)) = random_choice({1.0, 0.5, 0.0});
 }
 
+#undef FOREACH_TYPE
 #define FOREACH_TYPE(T) \
 template \
 void random_tensors(stride_type N, \
@@ -1335,7 +1355,7 @@ void random_tensors(stride_type N, \
                     indexed_dpd_marray<T>& A, label_vector& idx_A, \
                     indexed_dpd_marray<T>& B, label_vector& idx_B, \
                     indexed_dpd_marray<T>& C, label_vector& idx_C);
-#include "configs/foreach_type.h"
+DO_FOREACH_TYPE
 
 int main(int argc, char **argv)
 {

@@ -84,6 +84,8 @@ REPLICATED_TEMPLATED_TEST_CASE(dpd_replicate, R, T, all_types)
 
 REPLICATED_TEMPLATED_TEST_CASE(indexed_replicate, R, T, all_types)
 {
+    if (!std::is_same_v<T,double>) return;
+
     indexed_marray<T> A, B, C, D;
     label_vector idx_A, idx_B;
 

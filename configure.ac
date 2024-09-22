@@ -1,5 +1,5 @@
 AC_PREREQ([2.70])
-AC_INIT([tblis],[1.3.0],[damatthews@smu.edu],[tblis],[http://www.github.com/devinamatthews/tblis])
+AC_INIT([tblis],[2.0],[damatthews@smu.edu],[tblis],[http://www.github.com/devinamatthews/tblis])
 AM_INIT_AUTOMAKE([foreign silent-rules subdir-objects])
 AM_SILENT_RULES([yes])
 AM_MAINTAINER_MODE([disable])
@@ -19,9 +19,8 @@ fi
 AM_PROG_AS
 AC_PROG_EGREP
 AC_PROG_AWK
-AX_BLAS([blas_found=yes])
 AC_PROG_CXX([icpc g++ clang++])
-AX_CXX_COMPILE_STDCXX([17], [noext])
+AX_CXX_COMPILE_STDCXX([20], [noext])
 
 #
 # Apple's sys/cdefs.h redefines __restrict to null in C++ mode (!!!!!!)
@@ -30,14 +29,16 @@ AX_CXX_COMPILE_STDCXX([17], [noext])
 #AC_C_RESTRICT
 
 AC_DEFINE([RESTRICT], [__restrict__], [More convenient macro for restrict.])
-AM_CONDITIONAL([ENABLE_BLAS], [test x"$blas_found" = xyes])
 
 AC_SEARCH_LIBS([clock_gettime], [rt])
 
 topdir="\"`(cd $srcdir && pwd)`\""
 AC_DEFINE_UNQUOTED([TOPDIR], [$topdir], [The top source directory.])
+AC_SUBST([TOPDIR], [$topdir])
 
 AM_CONDITIONAL(IS_CLANG, [$CXX --version 2>/dev/null | grep -q clang])
+
+AM_CONDITIONAL(IS_OSX, [test `uname -s` = Darwin])
 
 #
 # Check for openmp simd flag
@@ -152,347 +153,88 @@ AC_MSG_RESULT([$label_type])
 AC_DEFINE_UNQUOTED([LABEL_TYPE], [$label_type], [label_type])
 
 #
-# Determine configurations to build
-#
-# Supported:
-#
-# reference, bulldozer, piledriver, excavator, zen, core2, sandybridge,
-# haswell, skx1, skx2, knl, auto
-#
-# Possible with porting from BLIS:
-#
-# armv7a, armv8a, bgq, cortex-a15, cortex-a9, power7, loongson3a, mic
+# Find BLIS and set up plugin
 #
 
-AC_ARG_ENABLE([config],
-[  --enable-config=...    a comma-separated list of configurations
-                          @<:@default=auto@:>@
+AC_ARG_WITH([blis-dir], AS_HELP_STRING([--with-blis-dir=dir],
+    [search for BLIS in the indicated directory, or 'download' to
+     force download of an internal copy. The default value 'auto'
+     first searches using pkg-config and then downloads an internal
+     copy if not found.]),
+    [blis_dir=$with_blis_dir], [blis_dir=auto])
 
-                          possible values are:
+ac_cv_search_libs_blis=no
+BUILD_BLIS=no
 
-                          reference, bulldozer, piledriver, excavator, zen,
-                          core2, sandybridge, haswell, skx1, skx2, knl,
-                          firestorm, auto
+PKG_CONFIG_PATH_save="$PKG_CONFIG_PATH"
+PKG_CONFIG_PATH="$blis_dir/share/pkgconfig $PKG_CONFIG_PATH"
 
-                          the following meta-configurations are also available:
+PKG_CHECK_MODULES([BLIS], [blis], [
+    PKG_CHECK_VAR([BLIS_PREFIX], [blis], [prefix])
+], [
+    BLIS_PREFIX=none
+])
 
-                          skx = skx1,skx2
-                          intel = core2,sandybridge,haswell,skx,knl
-                          amd = bulldozer,piledriver,excavator,zen
-                          x86 = intel,amd
-                          arm64 = firestorm],
-              [], [enable_config=auto])
+PKG_CONFIG_PATH="$PKG_CONFIG_PATH_save"
 
-if echo $enable_config | grep -q auto; then
-    enable_config=
-    using_default_configs=yes
-#    AC_CHECK_DEFINE([__MIC__], [enable_config=mic])
-    AC_CHECK_DEFINE([__x86_64__], [enable_config=x86])
-    AC_CHECK_DEFINE([_M_X64], [enable_config=x86])
-    AC_CHECK_DEFINE([__i386], [enable_config=x86])
-    AC_CHECK_DEFINE([_M_IX86], [enable_config=x86])
-    AC_CHECK_DEFINE([__aarch64__], [enable_config=arm64])
-#    AC_CHECK_DEFINE([__arm__], [enable_config=arm])
-#    AC_CHECK_DEFINE([_M_ARM], [enable_config=arm])
-#    AC_CHECK_DEFINE([__powerpc64__], [enable_config=power7])
-#    AC_CHECK_DEFINE([__ppc64__], [enable_config=power7])
-#    AC_CHECK_DEFINE([__PPC64__], [enable_config=power7])
-#    AC_CHECK_DEFINE([__powerpc__], [enable_config=power7])
-#    AC_CHECK_DEFINE([__ppc__], [enable_config=power7])
-#    AC_CHECK_DEFINE([__PPC__], [enable_config=power7])
-#    AC_CHECK_DEFINE([__bgq__], [enable_config=bgq])
-#    AC_CHECK_DEFINE([__mips], [enable_config=loongson3a])
-    AC_CHECK_DEFINE([__INTEL_COMPILER], [enable_config=intel])
-fi
+AC_MSG_CHECKING([for blis])
 
-if ( echo $enable_config | grep -qv reference ) && test x$using_default_configs = xyes; then
-    enable_config="${enable_config},reference"
-fi
+if test "x$blis_dir" != "xdownload"; then
 
-configs=`echo $enable_config | sed 's/x86/intel,amd/' \
-                             | sed 's/intel/core2,sandybridge,haswell,skx,knl/' \
-                             | sed 's/amd/bulldozer,piledriver,excavator,zen/' \
-                             | sed 's/skx,/skx1,skx2,/' \
-                             | sed 's/skx$/skx1,skx2/' \
-                             | sed 's/arm64/firestorm/' \
-                             | sed 's/,/ /g'`
+    if test "x$BLIS_PREFIX" = "xnone"; then
+        if test "x$blis_dir" != "xauto"; then
+            AC_MSG_RESULT([not found])
+            AC_MSG_ERROR([Could not find BLIS in the specified location])
+        fi
 
-for config in $configs; do
-    if ( echo $config | $EGREP -qv '^(reference|core2|sandybridge|haswell|skx1|skx2|knl|bulldozer|piledriver|excavator|zen|firestorm)$' ); then
-        AC_MSG_ERROR([Unknown configuration $config])
+        blis_dir=download
+    else
+        AC_MSG_RESULT([$BLIS_PREFIX])
+        blis_dir="$BLIS_PREFIX"
     fi
-done
-
-AC_MSG_CHECKING([compiler vendor])
-
-vendor_string=`$CC --version 2>/dev/null`
-if test x"$vendor_string" = x; then
-    vendor_string=`$CC -qversion 2>/dev/null`
-fi
-if test x"$vendor_string" = x; then
-    AC_MSG_ERROR([Unable to determine compiler vendor.])
 fi
 
-cc_vendor=`echo $vendor_string | $EGREP -oi 'icc|gcc|clang|emcc|pnacl|IBM|gnu-cc' | tr 'A-Z' 'a-z' | { read first rest ; echo $first ; }`
-if test x"$cc_vendor" = "xgnu-cc"; then
-    cc_vendor=gcc
-fi
-if test x"$cc_vendor" = x; then
-    AC_MSG_ERROR([Unable to determine compiler vendor.])
-fi
+if test "x$blis_dir" = "xdownload"; then
+    BLIS_REPO=https://github.com/flame/blis
+    BLIS_TAG=8d9be878
 
-AC_MSG_RESULT([$cc_vendor])
-
-if test x"$cc_vendor" = xicc || \
-   test x"$cc_vendor" = xgcc || \
-   test x"$cc_vendor" = xclang; then
-    cc_version=`echo $vendor_string | $EGREP -o '@<:@0-9@:>@+\.@<:@0-9@:>@+\.?@<:@0-9@:>@*' | { read first rest ; echo $first ; }`
-else
-    AC_MSG_ERROR([Unsupported compiler.])
-fi
-
-cc_major=`echo $cc_version | cut -d. -f1`
-cc_minor=`echo $cc_version | cut -d. -f2`
-cc_revision=`echo $cc_version | cut -d. -f3`
-
-AC_MSG_CHECKING([compiler version])
-if test x"$cc_revision" = x; then
-    AC_MSG_RESULT([$cc_major.$cc_minor])
-else
-    AC_MSG_RESULT([$cc_major.$cc_minor.$cc_revision])
-fi
-
-#
-# Compiler requirements:
-#
-# General: icc 15+, gcc 4.7+, clang 3.3+
-#
-# bulldozer: any
-# piledriver: any
-# excavator: gcc 4.9+, clang 3.5+
-# zen: gcc 6.0+, clang 4.0+
-#
-# core2: any
-# sandybridge: any
-# haswell: any
-# knl: icc 14.1+, gcc 5.0+, clang 3.5+
-# skx[12]: icc 15.1+, gcc 6.0+, clang 3.9+
-#
-if test x"$cc_vendor" = xicc; then
-    if test $cc_major -lt 15; then
-        AC_MSG_ERROR([Unsupported compiler version.])
+    blis_downloaded=no
+    if test -d download/blis; then
+        cd download/blis
+        if test "x$(git rev-parse --short HEAD)" = "x$BLIS_TAG"; then
+            blis_downloaded=yes
+        fi
+        cd ../..
     fi
-    if test $cc_major -eq 15; then
-        if test $cc_revision -lt 1; then
-            configs=`echo $configs | sed 's/ *skx1 */ /' \
-                                   | sed 's/ *skx2 */ /'`
+
+    if test "x$blis_downloaded" = "xyes"; then
+        AC_MSG_RESULT([already downloaded])
+    else
+        AC_MSG_RESULT([downloading BLIS $BLIS_TAG from $BLIS_REPO])
+        mkdir -p download
+        rm -rf download/blis
+        if ! ( cd download && git clone $BLIS_REPO blis && cd blis && git checkout -q $BLIS_TAG 2>/dev/null ); then
+            AC_MSG_ERROR([an error occurred downloading BLIS])
         fi
     fi
-elif test x"$cc_vendor" = xgcc; then
-    if test $cc_major -lt 4; then
-        AC_MSG_ERROR([Unsupported compiler version.])
-    fi
-    if test $cc_major -eq 4; then
-        if test $cc_minor -lt 7; then
-            AC_MSG_ERROR([Unsupported compiler version.])
-        fi
-        if test $cc_minor -lt 9; then
-            configs=`echo $configs |  sed 's/ *excavator */ /'`
-        fi
-        configs=`echo $configs | sed 's/ *knl */ /'`
-    fi
-    if test $cc_major -lt 6; then
-        configs=`echo $configs | sed 's/ *skx1 */ /' \
-                               | sed 's/ *skx2 */ /' \
-                               | sed 's/ *zen */ /'`
-    fi
-elif test x"$cc_vendor" = xclang; then
-    if test $cc_major -lt 3; then
-        AC_MSG_ERROR([Unsupported compiler version.])
-    fi
-    if test $cc_major -eq 3; then
-        if test $cc_minor -lt 3; then
-            AC_MSG_ERROR([Unsupported compiler version.])
-        fi
-        if test $cc_minor -lt 5; then
-            configs=`echo $configs | sed 's/ *knl */ /' \
-                                   | sed 's/ *excavator */ /'`
-        fi
-        if test $cc_minor -lt 9; then
-            configs=`echo $configs | sed 's/ *skx1 */ /' \
-                                   | sed 's/ *skx2 */ /'`
-        fi
-    fi
-    if test $cc_major -lt 4; then
-        configs=`echo $configs | sed 's/ *zen */ /'`
-    fi
+
+    BLIS_PREFIX=$(pwd)/download/blis/installed
+    BUILD_BLIS=yes
 fi
 
-if ( echo $configs | grep -q sandybridge ); then
-    AC_MSG_CHECKING([whether inline AVX can be compiled])
-    AC_TRY_ASSEMBLE([
-        vzeroall
-        vmovapd %ymm0, %ymm1
-        vmulpd %ymm0, %ymm0, %ymm1
-        ], [enable_avx=yes], [enable_avx=no])
-    AC_MSG_RESULT([$enable_avx])
-    if test "x$enable_avx" = xno; then
-        AC_MSG_WARN([AVX cannot be compiled; disabling sandybridge configuration])
-        configs=`echo $configs | sed 's/ *sandybridge */ /'`
-    fi
-fi
-
-if ( echo $configs | $EGREP -q 'haswell|piledriver|excavator|skx' ); then
-    AC_MSG_CHECKING([whether inline FMA3 can be compiled])
-    AC_TRY_ASSEMBLE([
-        vzeroall
-        vfmadd213pd %ymm0, %ymm1, %ymm2
-        ], [enable_fma3=yes], [enable_fma3=no])
-    AC_MSG_RESULT([$enable_fma3])
-    if test "x$enable_fma3" = xno; then
-        AC_MSG_WARN([FMA3 cannot be compiled; disabling haswell, piledriver, excavator, skx, and zen configurations])
-        configs=`echo $configs | sed 's/ *haswell */ /' \
-                               | sed 's/ *piledriver */ /' \
-                               | sed 's/ *excavator */ /' \
-                               | sed 's/ *skx1 */ /' \
-                               | sed 's/ *skx2 */ /' \
-                               | sed 's/ *zen */ /'`
-    fi
-fi
-
-if ( echo $configs | grep -q bulldozer ); then
-    AC_MSG_CHECKING([whether inline FMA4 can be compiled])
-    AC_TRY_ASSEMBLE([
-        vzeroall
-        vfmaddpd %ymm0, %ymm1, %ymm2, %ymm3
-        ], [enable_fma4=yes], [enable_fma4=no])
-    AC_MSG_RESULT([$enable_fma4])
-    if test "x$enable_fma4" = xno; then
-        AC_MSG_WARN([FMA4 cannot be compiled; disabling bulldozer configuration])
-        configs=`echo $configs | sed 's/ *bulldozer */ /'`
-    fi
-fi
-
-if ( echo $configs | $EGREP -q 'knl|skx' ); then
-    CPPFLAGS_save="$CPPFLAGS"
-    if test `uname -s` = Darwin; then
-        CPPFLAGS="$CPPFLAGS -Wa,-march=knl"
-    fi
-    AC_MSG_CHECKING([whether inline AVX-512F can be compiled])
-    AC_TRY_ASSEMBLE([
-        vmovapd %zmm0, %zmm1
-        vmulpd %zmm0, %zmm0, %zmm1
-        vfmadd213pd 0x400(%rax,%rsi,8) {1to8}, %zmm1, %zmm2
-        ], [enable_avx512f=yes], [enable_avx512f=no])
-    AC_MSG_RESULT([$enable_avx512f])
-    if test "x$enable_avx512f" = xno; then
-        AC_MSG_WARN([AVX-512F cannot be compiled; disabling knl and skx configurations])
-        configs=`echo $configs | sed 's/ *knl */ /' \
-                               | sed 's/ *skx1 */ /' \
-                               | sed 's/ *skx2 */ /'`
-    fi
-    CPPFLAGS="$CPPFLAGS_save"
-fi
-
-if ( echo $configs | $EGREP -q 'skx' ); then
-    CPPFLAGS_save="$CPPFLAGS"
-    if test `uname -s` = Darwin; then
-        CPPFLAGS="$CPPFLAGS -Wa,-march=skylake-avx512"
-    fi
-    AC_MSG_CHECKING([whether inline AVX-512DQ can be compiled])
-    AC_TRY_ASSEMBLE([
-        vpmullq %zmm0, %zmm0, %zmm1
-        ], [enable_avx512dq=yes], [enable_avx512dq=no])
-    AC_MSG_RESULT([$enable_avx512dq])
-    if test "x$enable_avx512dq" = xno; then
-        AC_MSG_WARN([AVX-512DQ cannot be compiled; disabling skx configuration])
-        configs=`echo $configs | sed 's/ *skx1 */ /' \
-                               | sed 's/ *skx2 */ /'`
-    fi
-    CPPFLAGS="$CPPFLAGS_save"
-fi
-
-AM_CONDITIONAL(ENABLE_INTEL_COMPILER, [test x"$cc_vendor" = xicc])
-
-AM_CONDITIONAL(IS_OSX, [test `uname -s` = Darwin])
-
-if test -z `echo $configs | tr -d "$IFS"`; then
-    AC_MSG_ERROR([no configurations enabled])
-fi
-
-AC_MSG_CHECKING([enabled configurations])
-AC_MSG_RESULT([$configs])
-
-AM_CONDITIONAL(ENABLE_ARMV7A, [echo $configs | grep -q armv7a])
-AM_CONDITIONAL(ENABLE_ARMV8A, [echo $configs | grep -q armv8a])
-AM_CONDITIONAL(ENABLE_BGQ, [echo $configs | grep -q bgq])
-AM_CONDITIONAL(ENABLE_BULLDOZER, [echo $configs | grep -q bulldozer])
-AM_CONDITIONAL(ENABLE_EXCAVATOR, [echo $configs | grep -q excavator])
-AM_CONDITIONAL(ENABLE_CORTEX_A15, [echo $configs | grep -q cortex-a15])
-AM_CONDITIONAL(ENABLE_CORTEX_A9, [echo $configs | grep -q cortex-a9])
-AM_CONDITIONAL(ENABLE_CORE2, [echo $configs | grep -q core2])
-AM_CONDITIONAL(ENABLE_HASWELL, [echo $configs | grep -q haswell])
-AM_CONDITIONAL(ENABLE_SKX1, [echo $configs | grep -q skx1])
-AM_CONDITIONAL(ENABLE_SKX2, [echo $configs | grep -q skx2])
-AM_CONDITIONAL(ENABLE_KNL, [echo $configs | grep -q knl])
-AM_CONDITIONAL(ENABLE_LOONGSON3A, [echo $configs | grep -q loongson3a])
-AM_CONDITIONAL(ENABLE_MIC, [echo $configs | grep -q mic])
-AM_CONDITIONAL(ENABLE_PILEDRIVER, [echo $configs | grep -q piledriver])
-AM_CONDITIONAL(ENABLE_POWER7, [echo $configs | grep -q power7])
-AM_CONDITIONAL(ENABLE_REFERENCE, [echo $configs | grep -q reference])
-AM_CONDITIONAL(ENABLE_SANDYBRIDGE, [echo $configs | grep -q sandybridge])
-AM_CONDITIONAL(ENABLE_ZEN, [echo $configs | grep -q zen])
-AM_CONDITIONAL(ENABLE_FIRESTORM, [echo $configs | grep -q firestorm])
-
-include_configs=""
-for config in $configs; do
-include_configs="$include_configs
-#include \"configs/$config/config.hpp\""
-done
-
-AC_SUBST([INCLUDE_CONFIGS], [$include_configs])
-AM_SUBST_NOTMAKE([INCLUDE_CONFIGS])
-
-foreach_config=""
-for config in $configs; do
-foreach_config="$foreach_config
-FOREACH_CONFIG(${config}_config)"
-done
-
-AC_SUBST([FOREACH_CONFIG], [$foreach_config])
-AM_SUBST_NOTMAKE([FOREACH_CONFIG])
-
-foreach_config_and_type=""
-for config in $configs; do
-foreach_config_and_type="$foreach_config_and_type
-#define FOREACH_TYPE(type) \\
-FOREACH_CONFIG_AND_TYPE(type, ${config}_config)
-#include \"foreach_type.h\""
-done
-
-AC_SUBST([FOREACH_CONFIG_AND_TYPE], [$foreach_config_and_type])
-AM_SUBST_NOTMAKE([FOREACH_CONFIG_AND_TYPE])
-
-types="float double scomplex dcomplex"
-foreach_type=""
-for type in $types; do
-foreach_type="$foreach_type
-FOREACH_TYPE($type)"
-done
-
-AC_SUBST([FOREACH_TYPE], [$foreach_type])
-AM_SUBST_NOTMAKE([FOREACH_TYPE])
+AC_SUBST([BUILD_BLIS], [$BUILD_BLIS])
+AM_CONDITIONAL(BUILD_BLIS, [test "x$BUILD_BLIS" = "xyes"])
 
 LT_INIT
 
 mkdir -p bin
 
-AC_CONFIG_FILES([Makefile
-                 src/configs/foreach_type.h
-                 src/configs/foreach_config.h
-                 src/configs/foreach_config_and_type.h
-                 src/configs/include_configs.hpp])
+AC_CONFIG_FILES([Makefile])
 AX_PREFIX_CONFIG_H([src/tblis_config.h], [TBLIS])
 AC_OUTPUT
 
 TBLIS_CONFIG_SUBDIR([src/external/tci])
+
+if test "x$BUILD_BLIS" = "xyes"; then
+    ( cd download/blis && ./configure -tomp,pthreads -p "$BLIS_PREFIX" --disable-blas --disable-cblas --enable-static --disable-shared auto )
+fi
