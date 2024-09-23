@@ -25,7 +25,7 @@ void scale(type_t type, const communicator& comm, const cntx_t* cntx,
     len_vector stride1;
     for (auto i : range(1,len_A.size())) stride1.push_back(stride_A[i]*ts);
 
-    auto scale_ukr = reinterpret_cast<scalv_ker_ft>(bli_cntx_get_ukr_dt((num_t)type, BLIS_SCALV_KER, cntx));
+    auto scale_ukr = reinterpret_cast<scal2v_ker_ft>(bli_cntx_get_ukr_dt((num_t)type, BLIS_SCAL2V_KER, cntx));
 
     comm.distribute_over_threads(n0, n1,
     [&](len_type n0_min, len_type n0_max, len_type n1_min, len_type n1_max)
@@ -41,7 +41,7 @@ void scale(type_t type, const communicator& comm, const cntx_t* cntx,
         {
             iter_A.next(A1);
             scale_ukr(conj_A ? BLIS_CONJUGATE : BLIS_NO_CONJUGATE,
-                      n0_max-n0_min, &alpha, A1, stride0, cntx);
+                      n0_max-n0_min, &alpha, A1, stride0, A1, stride0, cntx);
         }
     });
 

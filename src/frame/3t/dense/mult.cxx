@@ -48,7 +48,7 @@ void ger_blis(type_t type, const communicator& comm, const cntx_t* cntx,
     scalar zero(0.0, type);
     scalar one(1.0, type);
 
-    auto scalv_ukr = reinterpret_cast<scalv_ker_ft>(bli_cntx_get_ukr_dt((num_t)type, BLIS_SCALV_KER, cntx));
+    auto scal2v_ukr = reinterpret_cast<scal2v_ker_ft>(bli_cntx_get_ukr_dt((num_t)type, BLIS_SCAL2V_KER, cntx));
     auto axpbyv_ukr = reinterpret_cast<axpbyv_ker_ft>(bli_cntx_get_ukr_dt((num_t)type, BLIS_AXPBYV_KER, cntx));
 
     comm.distribute_over_threads(m, n,
@@ -66,13 +66,13 @@ void ger_blis(type_t type, const communicator& comm, const cntx_t* cntx,
             {
                 add(type, alpha, conj_B, B1, zero, false, alpha_B.raw());
 
-                if (conj_C)
-                    scalv_ukr(BLIS_CONJUGATE, m_max-m_min, &one, C1, rs_C, cntx);
+                if (conj_C && bli_dt_dom_is_complex((num_t)type))
+                    scal2v_ukr(BLIS_CONJUGATE, m_max-m_min, one.raw(), C1, rs_C, C1, rs_C, cntx);
 
                 axpbyv_ukr(conj_A ? BLIS_CONJUGATE : BLIS_NO_CONJUGATE,
                            m_max-m_min,
-                           &alpha_B, A1, inc_A,
-                              &beta, C1,  rs_C,
+                           alpha_B.raw(), A1, inc_A,
+                              beta.raw(), C1,  rs_C,
                            cntx);
 
                 B1 += inc_B*ts;
@@ -87,13 +87,13 @@ void ger_blis(type_t type, const communicator& comm, const cntx_t* cntx,
             {
                 add(type, alpha, conj_A, A1, zero, false, alpha_A.raw());
 
-                if (conj_C)
-                    scalv_ukr(BLIS_CONJUGATE, n_max-n_min, &one, C1, cs_C, cntx);
+                if (conj_C && bli_dt_dom_is_complex((num_t)type))
+                    scal2v_ukr(BLIS_CONJUGATE, n_max-n_min, one.raw(), C1, cs_C, C1, cs_C, cntx);
 
                 axpbyv_ukr(conj_B ? BLIS_CONJUGATE : BLIS_NO_CONJUGATE,
                            n_max-n_min,
-                           &alpha_A, B1, inc_B,
-                              &beta, C1,  cs_C,
+                           alpha_A.raw(), B1, inc_B,
+                              beta.raw(), C1,  cs_C,
                            cntx);
 
                 A1 += inc_A*ts;
@@ -117,10 +117,10 @@ void gemv_blis(type_t type, const communicator& comm, const cntx_t* cntx,
     auto AF = bli_cntx_get_blksz_def_dt((num_t)type, BLIS_AF, cntx);
     auto DF = bli_cntx_get_blksz_def_dt((num_t)type, BLIS_DF, cntx);
 
-    auto setv_ukr  = reinterpret_cast<setv_ker_ft >(bli_cntx_get_ukr_dt((num_t)type, BLIS_SETV_KER, cntx));
-    auto scalv_ukr = reinterpret_cast<scalv_ker_ft>(bli_cntx_get_ukr_dt((num_t)type, BLIS_SCALV_KER, cntx));
-    auto dotxf_ukr = reinterpret_cast<dotxf_ker_ft>(bli_cntx_get_ukr_dt((num_t)type, BLIS_DOTXF_KER, cntx));
-    auto axpyf_ukr = reinterpret_cast<axpyf_ker_ft>(bli_cntx_get_ukr_dt((num_t)type, BLIS_AXPYF_KER, cntx));
+    auto setv_ukr   = reinterpret_cast<setv_ker_ft >(bli_cntx_get_ukr_dt((num_t)type, BLIS_SETV_KER, cntx));
+    auto scal2v_ukr = reinterpret_cast<scal2v_ker_ft>(bli_cntx_get_ukr_dt((num_t)type, BLIS_SCAL2V_KER, cntx));
+    auto dotxf_ukr  = reinterpret_cast<dotxf_ker_ft>(bli_cntx_get_ukr_dt((num_t)type, BLIS_DOTXF_KER, cntx));
+    auto axpyf_ukr  = reinterpret_cast<axpyf_ker_ft>(bli_cntx_get_ukr_dt((num_t)type, BLIS_AXPYF_KER, cntx));
 
     comm.distribute_over_threads({m, DF},
     [&](len_type m_min, len_type m_max)
@@ -130,9 +130,9 @@ void gemv_blis(type_t type, const communicator& comm, const cntx_t* cntx,
         auto C1 = C + m_min*inc_C*ts;
 
         if (beta.is_zero())
-            setv_ukr(BLIS_NO_CONJUGATE, m_max-m_min, &zero, C1, inc_C, cntx);
-        else if (conj_C || !beta.is_one())
-            scalv_ukr(BLIS_CONJUGATE, m_max-m_min, &beta, C1, inc_C, cntx);
+            setv_ukr(BLIS_NO_CONJUGATE, m_max-m_min, zero.raw(), C1, inc_C, cntx);
+        else if ((conj_C && bli_dt_dom_is_complex((num_t)type)) || !beta.is_one())
+            scal2v_ukr(conj_C ? BLIS_CONJUGATE : BLIS_NO_CONJUGATE, m_max-m_min, beta.raw(), C1, inc_C, C1, inc_C, cntx);
 
         if (rs_A <= cs_A)
         {
@@ -141,9 +141,9 @@ void gemv_blis(type_t type, const communicator& comm, const cntx_t* cntx,
                 axpyf_ukr(conj_A ? BLIS_CONJUGATE : BLIS_NO_CONJUGATE,
                           conj_B ? BLIS_CONJUGATE : BLIS_NO_CONJUGATE,
                           m_max-m_min, std::min(AF, n-j),
-                          &alpha, A1, rs_A, cs_A,
-                                  B1, inc_B,
-                                  C1, inc_C,
+                          alpha.raw(), A1, rs_A, cs_A,
+                                       B1, inc_B,
+                                       C1, inc_C,
                           cntx);
 
                 A1 += AF* cs_A*ts;
@@ -157,9 +157,9 @@ void gemv_blis(type_t type, const communicator& comm, const cntx_t* cntx,
                 dotxf_ukr(conj_A ? BLIS_CONJUGATE : BLIS_NO_CONJUGATE,
                           conj_B ? BLIS_CONJUGATE : BLIS_NO_CONJUGATE,
                           n, std::min(DF, m_max-i),
-                          &alpha, A1, cs_A, rs_A,
-                                  B1, inc_B,
-                            &one, C1, inc_C,
+                          alpha.raw(), A1, cs_A, rs_A,
+                                       B1, inc_B,
+                            one.raw(), C1, inc_C,
                           cntx);
 
                 A1 += DF* rs_A*ts;
@@ -182,8 +182,8 @@ void gemm_blis(type_t type, const communicator& comm, const cntx_t* cntx,
     bli_obj_create_with_attached_buffer((num_t)type, k, n, (void*)B, rs_B, cs_B, &bo);
     bli_obj_create_with_attached_buffer((num_t)type, m, n, (void*)C, rs_C, cs_C, &co);
 
-    bli_obj_create_1x1_with_attached_buffer((num_t)type, (void*)&alpha, &alpo);
-    bli_obj_create_1x1_with_attached_buffer((num_t)type, (void*)&beta, &beto);
+    bli_obj_create_1x1_with_attached_buffer((num_t)type, (void*)alpha.raw(), &alpo);
+    bli_obj_create_1x1_with_attached_buffer((num_t)type, (void*)beta.raw(), &beto);
 
     if (conj_A) bli_obj_toggle_conj(&ao);
     if (conj_B) bli_obj_toggle_conj(&bo);
@@ -221,7 +221,7 @@ void gemm_bsmtc_blis(type_t type, const communicator& comm, const cntx_t* cntx,
                      len_type nblock_AB, int ndim_AB, const len_type* len_AB, bool pack_3d_AB,
                      const scalar& alpha, bool conj_A, const char* A, const stride_type* block_off_A_AC, const stride_type* block_off_A_AB, const stride_type* stride_A_AC, const stride_type* stride_A_AB,
                                           bool conj_B, const char* B, const stride_type* block_off_B_BC, const stride_type* block_off_B_AB, const stride_type* stride_B_BC, const stride_type* stride_B_AB,
-                     const scalar&  beta, bool conj_C,       char* C, const stride_type* block_off_C_AC, const stride_type* block_off_C_BC, const stride_type* stride_C_AC, const stride_type* stride_C_BC)
+                     const scalar& beta_, bool conj_C,       char* C, const stride_type* block_off_C_AC, const stride_type* block_off_C_BC, const stride_type* stride_C_AC, const stride_type* stride_C_BC)
 {
     stride_type zero = 0;
     if (!block_off_A_AC) block_off_A_AC = &zero;
@@ -232,6 +232,7 @@ void gemm_bsmtc_blis(type_t type, const communicator& comm, const cntx_t* cntx,
     if (!block_off_C_BC) block_off_C_BC = &zero;
 
     obj_t ao, bo, co, alpo, beto;
+    auto beta = beta_;
 
     auto m = std::reduce(len_AC, len_AC+ndim_AC, len_type{1}, std::multiplies<len_type>{});
     auto n = std::reduce(len_BC, len_BC+ndim_BC, len_type{1}, std::multiplies<len_type>{});
@@ -241,21 +242,33 @@ void gemm_bsmtc_blis(type_t type, const communicator& comm, const cntx_t* cntx,
     bli_obj_create_with_attached_buffer((num_t)type, k, n, (void*)B, stride_B_AB[0], stride_B_BC[0], &bo);
     bli_obj_create_with_attached_buffer((num_t)type, m, n, (void*)C, stride_C_AC[0], stride_C_BC[0], &co);
 
-    bli_obj_create_1x1_with_attached_buffer((num_t)type, (void*)&alpha, &alpo);
-    bli_obj_create_1x1_with_attached_buffer((num_t)type, (void*)&beta, &beto);
+    bli_obj_create_1x1_with_attached_buffer((num_t)type, (void*)alpha.raw(), &alpo);
+    bli_obj_create_1x1_with_attached_buffer((num_t)type, (void*)beta.raw(), &beto);
 
     if (conj_A) bli_obj_toggle_conj(&ao);
     if (conj_B) bli_obj_toggle_conj(&bo);
 
     if (conj_C && !beta.is_zero() && bli_dt_dom_is_complex((num_t)type))
     {
-        bli_obj_toggle_conj(&co);
-        bli_scal2m(&BLIS_ONE, &co, &co);
-        bli_obj_toggle_conj(&co);
+        auto ts = type_size[type];
+
+        len_vector len_C(len_AC, len_AC+ndim_AC);
+        len_C.insert(len_C.end(), len_BC, len_BC+ndim_BC);
+
+        len_vector stride_C(stride_C_AC, stride_C_AC+ndim_AC);
+        stride_C.insert(stride_C.end(), stride_B_BC, stride_B_BC+ndim_BC);
+
+        for (auto i : range(nblock_AC))
+        for (auto j : range(nblock_BC))
+            scale(type, comm, cntx, len_C, beta, conj_C, C + block_off_C_AC[i]*ts + block_off_C_BC[j]*ts, stride_C);
+
+        beta = 1.0;
+        conj_C = false;
     }
 
-    if ( bli_l3_return_early_if_trivial( &alpo, &ao, &bo, &beto, &co ) == BLIS_SUCCESS )
-        return;
+    printf("im %d (nat = %d, 1m = %d)\n",
+           bli_dt_dom_is_complex((num_t)type) ? bli_gemmind_find_avail((num_t)type) : BLIS_NAT,
+           BLIS_NAT, BLIS_1M);
 
     gemm_cntl_t cntl;
     bli_gemm_cntl_init
@@ -291,7 +304,7 @@ void gemm_bsmtc_blis(type_t type, const communicator& comm, const cntx_t* cntx,
     params_C.block_off = {block_off_C_AC, block_off_C_BC};
     params_C.ndim = {ndim_AC, ndim_BC};
     params_C.len = {len_AC, len_BC};
-    params_C.stride = {stride_A_AC, stride_C_BC};
+    params_C.stride = {stride_C_AC, stride_C_BC};
     params_C.pack_3d = {pack_3d_AC, pack_3d_BC};
 
     auto trans = bli_obj_buffer(&ao) == B;
@@ -710,9 +723,9 @@ void mult_blas(type_t type, const communicator& comm, const cntx_t* cntx,
             //TODO: need to bypass thread decorator?
             gemm_fpa[type](BLIS_NO_TRANSPOSE, BLIS_TRANSPOSE,
                            m, n, k,
-                           &alpha, a, 1, m,
-                                   b, 1, n,
-                            &zero, c, 1, n);
+                           alpha.raw(), a, 1, m,
+                                        b, 1, n,
+                            zero.raw(), c, 1, n);
 
             add(type, comm, cntx, {}, {}, len_AC+len_BC,
                  one,  false,             c, {}, stride_AC  +stride_BC,
@@ -853,9 +866,9 @@ void mult_vec(type_t type, const communicator& comm, const cntx_t* cntx,
             iter_ABC.next(A1, B1, C1);
 
             mult_ukr(n0_max-n0_min,
-                     &alpha, conj_A, A1, stride_A0,
+                     alpha.raw(), conj_A, A1, stride_A0,
                              conj_B, B1, stride_B0,
-                      &beta, conj_C, C1, stride_C0);
+                      beta.raw(), conj_C, C1, stride_C0);
         }
     });
 }
@@ -893,7 +906,7 @@ void mult(type_t type, const communicator& comm, const cntx_t* cntx,
             set(type, comm, cntx, len_AC+len_BC+len_ABC, beta, C,
                 stride_C_AC+stride_C_BC+stride_C_ABC);
         }
-        else if (!beta.is_one() || (beta.is_complex() && conj_C))
+        else if (!beta.is_one() || (bli_dt_dom_is_complex((num_t)type) && conj_C))
         {
             scale(type, comm, cntx, len_AC+len_BC+len_ABC, beta, conj_C, C,
                   stride_C_AC+stride_C_BC+stride_C_ABC);

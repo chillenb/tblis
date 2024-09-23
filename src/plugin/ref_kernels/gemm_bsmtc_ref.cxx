@@ -30,11 +30,15 @@ void TBLIS_REF_KERNEL(gemm_bsmtc)
     auto aux = *auxinfo;
     bli_auxinfo_set_params(bli_gemm_var_cntl_params(cntl), &aux);
 
+    auto* TBLIS_RESTRICT c = static_cast<T*>(c0);
+    auto* TBLIS_RESTRICT rscat_c = rscat_c0;
+    auto* TBLIS_RESTRICT cscat_c = cscat_c0;
+
     if (rs_c && cs_c)
     {
         gemm_ukr(m, n, k,
                  alpha, a, b,
-                 beta0, c0, rs_c, cs_c,
+                 beta0, c + *rscat_c + *cscat_c, rs_c, cs_c,
                  &aux, cntx);
     }
     else
@@ -43,10 +47,6 @@ void TBLIS_REF_KERNEL(gemm_bsmtc)
         T zero{};
         T ct[BLIS_STACK_BUF_MAX_SIZE / sizeof(T)]
             __attribute__((aligned(BLIS_STACK_BUF_ALIGN_SIZE)));
-
-        auto* TBLIS_RESTRICT c = static_cast<T*>(c0);
-        auto* TBLIS_RESTRICT rscat_c = rscat_c0;
-        auto* TBLIS_RESTRICT cscat_c = cscat_c0;
 
         auto rs_ct = row_pref ? nr : 1;
         auto cs_ct = row_pref ? 1 : mr;

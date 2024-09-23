@@ -29,17 +29,17 @@ void gemm_ker_bsmtc
     auto n        = bli_obj_width( c );
     auto k        = bli_obj_width( a );
 
-    auto a_cast   = static_cast<const char*>(bli_obj_buffer_at_off( a ));
+    auto a_cast   = static_cast<const char*>(bli_obj_buffer( a ));
     auto is_a     = bli_obj_imag_stride( a );
     auto pd_a     = bli_obj_panel_dim( a );
     auto ps_a     = bli_obj_panel_stride( a );
 
-    auto b_cast   = static_cast<const char*>(bli_obj_buffer_at_off( b ));
+    auto b_cast   = static_cast<const char*>(bli_obj_buffer( b ));
     auto is_b     = bli_obj_imag_stride( b );
     auto pd_b     = bli_obj_panel_dim( b );
     auto ps_b     = bli_obj_panel_stride( b );
 
-    auto c_cast   = static_cast<char*>(bli_obj_buffer_at_off( c ));
+    auto c_cast   = static_cast<char*>(bli_obj_buffer( c ));
     auto off_m    = bli_obj_row_off(c);
     auto off_n    = bli_obj_col_off(c);
 
