@@ -45,6 +45,7 @@ AM_CONDITIONAL(IS_OSX, [test `uname -s` = Darwin])
 #
 
 AC_MSG_CHECKING([for OpenMP SIMD pragma])
+AC_LANG_PUSH([C++])
 omp_simd_flag="not supported"
 for flag in -fopenmp-simd -qopenmp-simd; do
     CXXFLAGS_save="$CXXFLAGS"
@@ -58,6 +59,7 @@ for flag in -fopenmp-simd -qopenmp-simd; do
         ]])],[omp_simd_flag="$flag"],[])
     CXXFLAGS="$CXXFLAGS_save"
 done
+AC_LANG_POP([C++])
 AC_MSG_RESULT([$omp_simd_flag])
 if test "x$omp_simd_flag" != "xnot supported"; then
     CXXFLAGS="$CXXFLAGS $omp_simd_flag"
