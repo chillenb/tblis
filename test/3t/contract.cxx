@@ -27,6 +27,10 @@ void random_contract(stride_type N, T&& A, label_vector& idx_A,
            ndim_BC < 0 ||
            (ndim_A+ndim_B+ndim_C)%2 != 0);
 
+    ndim_AB = 1;
+    ndim_AC = 2;
+    ndim_BC = 1;
+
     random_tensors(N,
                    0, 0, 0,
                    ndim_AB, ndim_AC, ndim_BC,
@@ -126,6 +130,7 @@ REPLICATED_TEMPLATED_TEST_CASE(dpd_contract, R, T, all_types)
     mult<T>(scale, A, idx_A, B, idx_B, scale, E, idx_C);
 
     add<T>(T(-1), D, idx_C, T(1), E, idx_C);
+
     error = reduce<T>(REDUCE_NORM_2, E, idx_C);
 
     check("BLIS", error, scale*neps);

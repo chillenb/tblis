@@ -32,8 +32,6 @@ REPLICATED_TEMPLATED_TEST_CASE(gemm, 1, T, all_types)
     random_gemm(N/10, A, B, C);
 
     T scale(10.0*random_unit<T>());
-    if constexpr (std::is_same_v<T,scomplex>)
-    scale = scomplex(1,1);
 
     len_type m = C.length(0);
     len_type n = C.length(1);

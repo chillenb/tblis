@@ -56,37 +56,18 @@ void TBLIS_REF_KERNEL(gemm_bsmtc)
                  &zero, ct, rs_ct, cs_ct,
                  &aux, cntx);
 
-        if (row_pref)
+        if (beta == zero)
         {
-            if (beta == zero)
-            {
-                for (len_type i = 0;i < m;i++)
-                    for (len_type j = 0;j < n;j++)
-                        c[rscat_c[i] + cscat_c[j]] = ct[i*nr + j];
-            }
-            else
-            {
-                for (len_type i = 0;i < m;i++)
-                    for (len_type j = 0;j < n;j++)
-                        c[rscat_c[i] + cscat_c[j]] =
-                            ct[i*nr + j] + beta*c[rscat_c[i] + cscat_c[j]];
-            }
+            for (len_type i = 0;i < m;i++)
+                for (len_type j = 0;j < n;j++)
+                    c[rscat_c[i] + cscat_c[j]] = ct[i*rs_ct + j*cs_ct];
         }
         else
         {
-            if (beta == zero)
-            {
+            for (len_type i = 0;i < m;i++)
                 for (len_type j = 0;j < n;j++)
-                    for (len_type i = 0;i < m;i++)
-                        c[rscat_c[i] + cscat_c[j]] = ct[i + j*mr];
-            }
-            else
-            {
-                for (len_type j = 0;j < n;j++)
-                    for (len_type i = 0;i < m;i++)
-                        c[rscat_c[i] + cscat_c[j]] =
-                            ct[i + j*mr] + beta*c[rscat_c[i] + cscat_c[j]];
-            }
+                    c[rscat_c[i] + cscat_c[j]] =
+                        ct[i*rs_ct + j*cs_ct] + beta*c[rscat_c[i] + cscat_c[j]];
         }
     }
 }

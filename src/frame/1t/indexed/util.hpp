@@ -10,8 +10,6 @@
 #include "frame/1t/dense/add.hpp"
 #include "frame/3t/dpd/mult.hpp"
 
-#include "external/stl_ext/stl_ext/iostream.hpp"
-
 namespace tblis
 {
 

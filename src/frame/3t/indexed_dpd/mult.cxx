@@ -31,10 +31,10 @@ template <typename T, int N>
 std::ostream& operator<<(std::ostream& os, const index_set<N>& v)
 {
     os << "\n{\n";
-    os << "\toffset, factor: " << v.offset << " " << v.factor << '\n';
+    os << "\toffset, factor: " << v.offset << " " << v.factor << "\n";
     for (int i = 0;i < N;i++)
-        os << "\tkey, idx: " << v.key[i] << " " << v.idx[i] << '\n';
-    return os << '}';
+        os << "\tkey, idx: " << v.key[i] << " " << v.idx[i] << "\n";
+    return os << "}";
 }
 
 template <typename T>

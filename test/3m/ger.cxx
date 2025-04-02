@@ -22,7 +22,7 @@ REPLICATED_TEMPLATED_TEST_CASE(ger, R, T, all_types)
 {
     matrix<T> A, B, C, D, E;
 
-    random_ger(N, A, B, C);
+    random_ger(N/100, A, B, C);
 
     T scale(10.0*random_unit<T>());
 

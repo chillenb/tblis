@@ -14,9 +14,9 @@
 
 #define BLIS_ENABLE_STD_COMPLEX
 #ifdef TBLIS_BLIS_BLIS_H
-#include <blis/blis.h>
+#include "blis/blis.h"
 #else
-#include <blis.h>
+#include "blis.h"
 #endif
 
 #if __cplusplus >= 201703l && !defined(TBLIS_DISABLE_CPLUSPLUS)
@@ -564,6 +564,20 @@ typedef struct tblis_scalar
         tblis_scalar ret(other);
         ret.sqrt();
         return other;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const tblis_scalar& x)
+    {
+        switch (x.type)
+        {
+            case TYPE_FLOAT:    os << x.data.s; break;
+            case TYPE_DOUBLE:   os << x.data.d; break;
+            case TYPE_SCOMPLEX: os << '(' << x.data.c.real() << ',' << x.data.c.imag() << ')'; break;
+            case TYPE_DCOMPLEX: os << '(' << x.data.z.real() << ',' << x.data.z.imag() << ')'; break;
+            default: break;
+        }
+
+        return os;
     }
 
 #endif

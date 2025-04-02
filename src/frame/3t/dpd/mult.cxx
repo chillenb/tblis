@@ -97,6 +97,8 @@ void gemm_dpd_blis(type_t type, const communicator& comm, const cntx_t* cntx,
                       one, conj_C, C.data() + (local_C.data()-C.data())*ts, local_C.strides());
             }
         }
+
+        conj_C = false;
     }
 
     if (m == 0 || n == 0) return;
@@ -311,12 +313,7 @@ void mult_blis(type_t type, const communicator& comm, const cntx_t* cntx,
                dim_vector idx_C_ABC)
 {
     const len_type ts = type_size[type];
-
     const auto nirrep = A.num_irreps();
-
-    irrep_vector irreps_ABC(idx_A_ABC.size());
-    len_vector len_ABC(idx_A_ABC.size());
-
     const auto irrep_ABC = A.irrep()^B.irrep()^C.irrep();
     const auto irrep_AC = A.irrep()^irrep_ABC;
     const auto irrep_BC = B.irrep()^irrep_ABC;
@@ -505,13 +502,10 @@ void mult_block(type_t type, const communicator& comm, const cntx_t* cntx,
                 dim_vector idx_C_ABC)
 {
     const len_type ts = type_size[type];
-
     const auto nirrep = A.num_irreps();
-
     const auto ndim_A = A.dimension();
     const auto ndim_B = B.dimension();
     const auto ndim_C = C.dimension();
-
     const int ndim_AC = idx_C_AC.size();
     const int ndim_BC = idx_C_BC.size();
     const int ndim_AB = idx_A_AB.size();

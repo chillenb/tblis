@@ -6,22 +6,22 @@ namespace tblis
 
 inline void set0s_edge(dim_t i, dim_t m, dim_t j, dim_t n, float* p, inc_t ldp)
 {
-    bli_sset0s_edge(i, m, j, n, p, ldp);
+    bli_tset0s_edge(s, i, m, j, n, p, ldp);
 }
 
 inline void set0s_edge(dim_t i, dim_t m, dim_t j, dim_t n, double* p, inc_t ldp)
 {
-    bli_dset0s_edge(i, m, j, n, p, ldp);
+    bli_tset0s_edge(d, i, m, j, n, p, ldp);
 }
 
 inline void set0s_edge(dim_t i, dim_t m, dim_t j, dim_t n, scomplex* p, inc_t ldp)
 {
-    bli_cset0s_edge(i, m, j, n, reinterpret_cast<::scomplex*>(p), ldp);
+    bli_tset0s_edge(c, i, m, j, n, reinterpret_cast<::scomplex*>(p), ldp);
 }
 
 inline void set0s_edge(dim_t i, dim_t m, dim_t j, dim_t n, dcomplex* p, inc_t ldp)
 {
-    bli_zset0s_edge(i, m, j, n, reinterpret_cast<::dcomplex*>(p), ldp);
+    bli_tset0s_edge(z, i, m, j, n, reinterpret_cast<::dcomplex*>(p), ldp);
 }
 
 template <typename T>

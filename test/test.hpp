@@ -6,6 +6,7 @@
 #include <numeric>
 #include <getopt.h>
 #include <sstream>
+#include <string>
 #include <iomanip>
 #include <map>
 #include <typeinfo>
@@ -84,29 +85,13 @@ INFO_OR_PRINT("factor_" #t "      = \n" << t.factors()); \
 INFO_OR_PRINT("idx_" #t "         = " << substr(idx_##t,0,t.dense_dimension()) << \
                                    " " << substr(idx_##t,t.dense_dimension()));
 
-constexpr bool is_dpd(auto&& x) requires requires { x.irrep(); } { return true; }
-constexpr bool is_dpd(auto&&, ...) { return false; }
+template <typename T, typename=decltype(std::declval<T>().irrep())>
+std::array<char,2> is_dpd_(const T&);
 
-#define PRINT_TENSOR(t) \
-cout << "\n" #t ":\n"; \
-if constexpr (MArray::is_marray<decltype(t)>::value) \
-t.template view<DYNAMIC>().for_each_element( \
-[](auto&& e, auto&& pos) \
-{ \
-    if (std::abs(e) > 1e-13) cout << pos << " " << e << endl; \
-}); \
-else if constexpr (is_dpd(t)) \
-t.view().for_each_element( \
-[](auto&& e, auto&& irr, auto&& pos) \
-{ \
-    if (std::abs(e) > 1e-13) cout << irr << " " << pos << " " << e << endl; \
-}); \
-else \
-t.view().for_each_element( \
-[](auto&& e, auto&& pos) \
-{ \
-    if (std::abs(e) > 1e-13) cout << pos << " " << e << endl; \
-});
+std::array<char,1> is_dpd_(...);
+
+template <typename T>
+constexpr bool is_dpd(const T& x) { return sizeof(is_dpd_(x)) == 2; }
 
 template <typename T>
 auto tensor_data(const marray<T>& v) { return v.data(); }
@@ -119,6 +104,27 @@ auto tensor_data(const indexed_marray<T>& v) { return v.data(0); }
 
 template <typename T>
 auto tensor_data(const indexed_dpd_marray<T>& v) { return v.data(0); }
+
+#define PRINT_TENSOR(t) \
+cout << "\n" #t ":\n"; \
+if constexpr (MArray::is_marray<decltype(t)>::value) \
+t.template view<DYNAMIC>().for_each_element( \
+[p=tensor_data(t)](auto&& e, auto&& pos) \
+{ \
+    if (std::abs(e) > 1e-13) cout << &e - p << ' ' << pos << ' ' << e << endl; \
+}); \
+else if constexpr (is_dpd(t)) \
+t.view().for_each_element( \
+[p=tensor_data(t)](auto&& e, auto&& irr, auto&& pos) \
+{ \
+    if (std::abs(e) > 1e-13) cout << &e - p << ' ' << irr << ' ' << pos << ' ' << e << endl; \
+}); \
+else \
+t.view().for_each_element( \
+[p=tensor_data(t)](auto&& e, auto&& pos) \
+{ \
+    if (std::abs(e) > 1e-13) cout << &e - p << ' ' << pos << ' ' << e << endl; \
+});
 
 template <typename... Ts>
 auto substr(const std::string& s, Ts&&... args)

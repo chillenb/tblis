@@ -7,13 +7,14 @@ REPLICATED_TEMPLATED_TEST_CASE(scale, R, T, all_types)
     random_tensor(100, A);
     label_vector idx_A = range<label_type>('a', static_cast<label_type>('a'+A.dimension()));
 
-    TENSOR_INFO(A);
-
     auto neps = prod(A.lengths());
 
     T ref_val = reduce<T>(REDUCE_SUM, A, idx_A);
 
     T scale(10.0*random_unit<T>());
+
+    TENSOR_INFO(A);
+    INFO("scale = " << scale);
 
     tblis::scale(scale, A, idx_A);
     T calc_val = reduce<T>(REDUCE_SUM, A, idx_A);

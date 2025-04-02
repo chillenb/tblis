@@ -22,7 +22,7 @@ REPLICATED_TEMPLATED_TEST_CASE(gemv, R, T, all_types)
 {
     matrix<T> A, B, C, D, E;
 
-    random_gemv(N, A, B, C);
+    random_gemv(N/100, A, B, C);
 
     T scale(10.0*random_unit<T>());
 

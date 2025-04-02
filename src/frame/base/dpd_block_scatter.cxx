@@ -1,6 +1,8 @@
 #include "block_scatter.hpp"
 #include "dpd_block_scatter.hpp"
 
+#include "src/external/stl_ext/stl_ext/iostream.hpp"
+
 namespace tblis
 {
 

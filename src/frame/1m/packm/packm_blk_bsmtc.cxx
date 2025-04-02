@@ -37,8 +37,8 @@ void packm_blk_bsmtc(const obj_t*     c,
     auto n_iter   = ceil_div(iter_dim, panel_dim_max);
     auto k_blocks = ceil_div(panel_len, panel_len_block);
 
-    auto panel_size      = size_p;
-    size_p += size_as_type<inc_t>(n_iter*(panel_dim_max+1) + k_blocks*(panel_len_block+1), dt_p);
+    auto panel_size = size_p;
+    size_p += size_as_type<inc_t>(n_iter*(panel_dim_max+1) + k_blocks*(panel_len_block+1), dt_p) * dt_p_size;
 
     // Update the buffer address in p to point to the buffer associated
     // with the mem_t entry acquired from the memory broker (now cached in
@@ -65,7 +65,7 @@ void packm_blk_bsmtc(const obj_t*     c,
     auto  params        = static_cast<const bsmtc_params*>(bli_packm_def_cntl_ukr_params(cntl));
     auto  packm_ker     = reinterpret_cast<packm_bsmtc_ft>(bli_cntx_get_ukr2_dt(dt_c, dt_p, (ukr_t)PACKM_BSMTC_UKR, cntx));
 
-    auto  rscat_c       = convert_and_align<inc_t>(p_cast + panel_size*dt_p_size);
+    auto  rscat_c       = convert_and_align<inc_t>(p_cast + panel_size);
     auto  cscat_c       = rscat_c + n_iter*panel_dim_max;
     auto  rbs_c         = cscat_c + k_blocks*panel_len_block;
     auto  cbs_c         = rbs_c   + n_iter;

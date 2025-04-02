@@ -234,13 +234,17 @@ void gemm_bsmtc_blis(type_t type, const communicator& comm, const cntx_t* cntx,
     obj_t ao, bo, co, alpo, beto;
     auto beta = beta_;
 
-    auto m = std::reduce(len_AC, len_AC+ndim_AC, len_type{1}, std::multiplies<len_type>{});
-    auto n = std::reduce(len_BC, len_BC+ndim_BC, len_type{1}, std::multiplies<len_type>{});
-    auto k = std::reduce(len_AB, len_AB+ndim_AB, len_type{1}, std::multiplies<len_type>{});
+    auto m = std::reduce(len_AC, len_AC+ndim_AC, len_type{1}, std::multiplies<len_type>{}) * nblock_AC;
+    auto n = std::reduce(len_BC, len_BC+ndim_BC, len_type{1}, std::multiplies<len_type>{}) * nblock_BC;
+    auto k = std::reduce(len_AB, len_AB+ndim_AB, len_type{1}, std::multiplies<len_type>{}) * nblock_AB;
 
-    bli_obj_create_with_attached_buffer((num_t)type, m, k, (void*)A, stride_A_AC[0], stride_A_AB[0], &ao);
-    bli_obj_create_with_attached_buffer((num_t)type, k, n, (void*)B, stride_B_AB[0], stride_B_BC[0], &bo);
-    bli_obj_create_with_attached_buffer((num_t)type, m, n, (void*)C, stride_C_AC[0], stride_C_BC[0], &co);
+    auto at = stride_A_AB[0] < stride_A_AC[0];
+    auto bt = stride_B_BC[0] < stride_B_AB[0];
+    auto ct = stride_C_BC[0] < stride_C_AC[0];
+
+    bli_obj_create_with_attached_buffer((num_t)type, m, k, (void*)A, at ? k : 1, at ? 1 : m, &ao);
+    bli_obj_create_with_attached_buffer((num_t)type, k, n, (void*)B, bt ? n : 1, bt ? 1 : k, &bo);
+    bli_obj_create_with_attached_buffer((num_t)type, m, n, (void*)C, ct ? n : 1, ct ? 1 : m, &co);
 
     bli_obj_create_1x1_with_attached_buffer((num_t)type, (void*)alpha.raw(), &alpo);
     bli_obj_create_1x1_with_attached_buffer((num_t)type, (void*)beta.raw(), &beto);
@@ -265,10 +269,6 @@ void gemm_bsmtc_blis(type_t type, const communicator& comm, const cntx_t* cntx,
         beta = 1.0;
         conj_C = false;
     }
-
-    printf("im %d (nat = %d, 1m = %d)\n",
-           bli_dt_dom_is_complex((num_t)type) ? bli_gemmind_find_avail((num_t)type) : BLIS_NAT,
-           BLIS_NAT, BLIS_1M);
 
     gemm_cntl_t cntl;
     bli_gemm_cntl_init
@@ -682,9 +682,9 @@ void mult_blas(type_t type, const communicator& comm, const cntx_t* cntx,
     auto stride_B_ABC = stride_B_ABC_; stride_B_ABC.push_back(1);
     auto stride_C_ABC = stride_C_ABC_; stride_C_ABC.push_back(1);
 
-    auto stride_AC = MArray::detail::strides(len_AC, MArray::COLUMN_MAJOR);
-    auto stride_BC = MArray::detail::strides(len_BC, MArray::COLUMN_MAJOR);
-    auto stride_AB = MArray::detail::strides(len_AB, MArray::COLUMN_MAJOR);
+    auto stride_A = MArray::detail::strides(len_AC+len_AB, MArray::COLUMN_MAJOR);
+    auto stride_B = MArray::detail::strides(len_BC+len_AB, MArray::COLUMN_MAJOR);
+    auto stride_C = MArray::detail::strides(len_AC+len_BC, MArray::COLUMN_MAJOR);
 
     auto m = stl_ext::prod(len_AC);
     auto n = stl_ext::prod(len_BC);
@@ -714,21 +714,21 @@ void mult_blas(type_t type, const communicator& comm, const cntx_t* cntx,
         {
             add(type, comm, cntx, {}, {}, len_AC+len_AB,
                  one, conj_A, A + (A1-A)*ts, {}, stride_A_AC+stride_A_AB,
-                zero,  false,             a, {}, stride_AC  +stride_AB);
+                zero,  false,             a, {}, stride_A);
 
             add(type, comm, cntx, {}, {}, len_BC+len_AB,
                  one, conj_B, B + (B1-B)*ts, {}, stride_B_BC+stride_B_AB,
-                zero,  false,             b, {}, stride_BC  +stride_AB);
+                zero,  false,             b, {}, stride_B);
 
             //TODO: need to bypass thread decorator?
             gemm_fpa[type](BLIS_NO_TRANSPOSE, BLIS_TRANSPOSE,
                            m, n, k,
                            alpha.raw(), a, 1, m,
                                         b, 1, n,
-                            zero.raw(), c, 1, n);
+                            zero.raw(), c, 1, m);
 
             add(type, comm, cntx, {}, {}, len_AC+len_BC,
-                 one,  false,             c, {}, stride_AC  +stride_BC,
+                 one,  false,             c, {}, stride_C,
                 beta, conj_C, C + (C1-C)*ts, {}, stride_C_AC+stride_C_BC);
 
             comm.barrier();

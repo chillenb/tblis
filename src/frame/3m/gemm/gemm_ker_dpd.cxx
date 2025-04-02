@@ -5,6 +5,8 @@
 #include "frame/base/alignment.hpp"
 #include "frame/base/dpd_block_scatter.hpp"
 
+#include "src/external/stl_ext/stl_ext/iostream.hpp"
+
 namespace tblis
 {
 
@@ -99,12 +101,14 @@ void gemm_ker_dpd
     auto jr_nt  = bli_thrinfo_n_way( thread );
     auto jr_tid = bli_thrinfo_work_id( thread );
 
-    auto [m_iter_all,
-          m_patch,
-          m_patch_off] = get_patches(m, off_m, MR, params.patch_size[0]);
-    auto [n_iter_all,
-          n_patch,
-          n_patch_off] = get_patches(n, off_n, NR, params.patch_size[1]);
+    len_type m_iter_all, m_patch0, m_patch_off0;
+    std::tie(m_iter_all,
+             m_patch0,
+             m_patch_off0) = get_patches(m, off_m, MR, params.patch_size[0]);
+    len_type n_iter_all, n_patch0, n_patch_off0;
+    std::tie(n_iter_all,
+             n_patch0,
+             n_patch_off0) = get_patches(n, off_n, NR, params.patch_size[1]);
 
     auto scat_size = sizeof(inc_t) * (m + n + m_iter_all + n_iter_all);
     auto rscat_c = static_cast<inc_t*>(bli_packm_alloc_ex(scat_size, BLIS_BUFFER_FOR_GEN_USE, thread));
@@ -112,16 +116,16 @@ void gemm_ker_dpd
     auto rbs_c   = cscat_c + n;
     auto cbs_c   = rbs_c + m_iter_all;
 
-    for_each_patch(n, params.patch_size[1], n_patch, n_patch_off,
+    auto b0 = b_cast;
+    for_each_patch(n, params.patch_size[1], n_patch0, n_patch_off0,
     [&](auto n_patch, auto n_patch_size, auto n_patch_off)
     {
-        auto b0 = b_cast;
         auto n_iter = ceil_div(n_patch_size, NR);
 
-        for_each_patch(m, params.patch_size[0], m_patch, m_patch_off,
+        auto a0 = a_cast;
+        for_each_patch(m, params.patch_size[0], m_patch0, m_patch_off0,
         [&](int m_patch, len_type m_patch_size, len_type m_patch_off)
         {
-            auto a0 = a_cast;
             auto m_iter = ceil_div(m_patch_size, MR);
 
             dim_t jr_start, jr_end, jr_inc;
@@ -182,23 +186,23 @@ void gemm_ker_dpd
             bli_thrinfo_barrier(thread);
 
             // Loop over the n dimension (NR columns at a time).
-            for ( dim_t j = jr_start; j < jr_end; j += jr_inc )
+            for ( dim_t j = jr_start; j < jr_end && n_ut_for_me; j += jr_inc )
             {
                 auto b1 = b0 + j * cstep_b;
 
                 // Compute the current microtile's width.
-                auto n_cur = std::min(n - j*NR, NR);
+                auto n_cur = std::min(n_patch_size - j*NR, NR);
 
                 // Initialize our next panel of B to be the current panel of B.
                 auto b2 = b1;
 
                 // Loop over the m dimension (MR rows at a time).
-                for ( dim_t i = ir_start; i < ir_end; i += ir_inc )
+                for ( dim_t i = ir_start; i < ir_end && n_ut_for_me; i += ir_inc )
                 {
                     auto a1  = a0 + i * rstep_a;
 
                     // Compute the current microtile's length.
-                    auto m_cur = std::min(m - i*MR, MR);
+                    auto m_cur = std::min(m_patch_size - i*MR, MR);
 
                     // Compute the addresses of the next panels of A and B.
                     auto a2 = bli_gemm_get_next_a_upanel( a1, rstep_a, ir_inc );
@@ -232,7 +236,7 @@ void gemm_ker_dpd
 
                     // Decrement the number of microtiles assigned to the thread; once
                     // it reaches zero, return immediately.
-                    n_ut_for_me -= 1; if ( n_ut_for_me == 0 ) return;
+                    n_ut_for_me--;
                 }
 
                 ir_start = ir_next;

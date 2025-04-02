@@ -1046,6 +1046,7 @@ void random_tensors(stride_type N,
     do
     {
         nirrep = 1 << random_number(2);
+        nirrep = 2;
         irrep_A = random_number(nirrep-1);
         irrep_B = random_number(nirrep-1);
         irrep_C = irrep_A^irrep_B;

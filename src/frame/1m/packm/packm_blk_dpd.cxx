@@ -5,6 +5,8 @@
 #include "frame/base/alignment.hpp"
 #include "frame/base/dpd_block_scatter.hpp"
 
+#include "src/external/stl_ext/stl_ext/iostream.hpp"
+
 namespace tblis
 {
 
@@ -29,7 +31,6 @@ void packm_blk_dpd(const obj_t*     c,
 
     auto  iter_dim        = bli_obj_length( p );
     auto  panel_len       = bli_obj_width( p );
-    auto  panel_len_max   = bli_obj_padded_width( p );
     auto  panel_dim_max   = bli_obj_panel_dim( p );
 	auto  panel_dim_pack  = bli_packm_def_cntl_bmult_m_pack( cntl );
     auto  panel_len_block = bli_cntx_get_blksz_def_dt(dt_p, (bszid_t)KE_BSZ, cntx);
@@ -37,7 +38,6 @@ void packm_blk_dpd(const obj_t*     c,
     auto  panel_dim_off   = bli_obj_row_off(c);
     auto  panel_len_off   = bli_obj_col_off(c);
 
-    auto  p_cast          = static_cast<char*>(bli_obj_buffer(p));
     auto  ldp             = bli_obj_col_stride(p);
     auto  ps_p            = bli_obj_panel_stride(p);
     auto  bcast_p         = bli_packm_def_cntl_bmult_m_bcast(cntl);
@@ -49,15 +49,17 @@ void packm_blk_dpd(const obj_t*     c,
     auto  packm_ker       = reinterpret_cast<packm_bsmtc_ft>(bli_cntx_get_ukr2_dt(dt_c, dt_p, (ukr_t)PACKM_BSMTC_UKR, cntx));
 
     // Compute the total number of iterations we'll need.
-    auto [n_iter,
-          n_patch,
-          n_patch_off]    = get_patches( iter_dim, panel_dim_off,   panel_dim_max, params.patch_size[0]);
-    auto [k_blocks,
-          k_patch,
-          k_patch_off]    = get_patches(panel_len, panel_len_off, panel_len_block, params.patch_size[1]);
+    len_type n_iter, n_patch0, n_patch_off0;
+    std::tie(n_iter,
+             n_patch0,
+             n_patch_off0) = get_patches( iter_dim, panel_dim_off,   panel_dim_max, params.patch_size[0]);
+    len_type k_blocks, k_patch0, k_patch_off0;
+    std::tie(k_blocks,
+             k_patch0,
+             k_patch_off0) = get_patches(panel_len, panel_len_off, panel_len_block, params.patch_size[1]);
 
-    auto  panel_size      = n_iter * ps_p;
-          size_p          = panel_size * dt_p_size + size_as_type<inc_t>(iter_dim + panel_len + n_iter + k_blocks, dt_p);
+    auto panel_size = n_iter * ps_p * dt_p_size;
+    size_p += size_as_type<inc_t>(iter_dim + panel_len + n_iter + k_blocks, dt_p) * dt_p_size;
 
     // Update the buffer address in p to point to the buffer associated
     // with the mem_t entry acquired from the memory broker (now cached in
@@ -69,10 +71,11 @@ void packm_blk_dpd(const obj_t*     c,
     if ( bli_error_checking_is_enabled() )
         bli_packm_int_check( c, p );
 
-    auto  rscat_c = convert_and_align<inc_t>(p_cast + panel_size * dt_p_size);
-    auto  cscat_c = rscat_c + iter_dim;
-    auto  rbs_c   = cscat_c + panel_len;
-    auto  cbs_c   = rbs_c   + n_iter;
+    auto p_cast  = static_cast<char*>(bli_obj_buffer(p));
+    auto rscat_c = convert_and_align<inc_t>(p_cast + panel_size);
+    auto cscat_c = rscat_c + iter_dim;
+    auto rbs_c   = cscat_c + panel_len;
+    auto cbs_c   = rbs_c   + n_iter;
 
     // Query the number of threads (single-member thread teams) and the thread
     // team ids from the current thread's packm thrinfo_t node.
@@ -81,12 +84,12 @@ void packm_blk_dpd(const obj_t*     c,
 
     auto p0 = p_cast;
 
-    for_each_patch(iter_dim, params.patch_size[0], n_patch, n_patch_off,
+    for_each_patch(iter_dim, params.patch_size[0], n_patch0, n_patch_off0,
     [&](auto n_patch, auto n_patch_size, auto n_patch_off)
     {
         char* p1 = p0;
 
-        for_each_patch(panel_len, params.patch_size[1], k_patch, k_patch_off,
+        for_each_patch(panel_len, params.patch_size[1], k_patch0, k_patch_off0,
         [&](int k_patch, len_type k_patch_size, len_type k_patch_off)
         {
             TBLIS_ASSERT(p1 >= p_cast);
@@ -129,9 +132,9 @@ void packm_blk_dpd(const obj_t*     c,
                         conjc,
                         schema,
                         panel_dim,
-                        panel_len,
+                        k_patch_size,
                         panel_dim_max,
-                        panel_len_max,
+                        k_patch_size,
                         bcast_p,
                         kappa_cast,
                         c2, rscat_c2, *rbs_c2, cscat_c, cbs_c,
@@ -139,7 +142,7 @@ void packm_blk_dpd(const obj_t*     c,
                     );
                 }
 
-                p2       += ps_p*dt_p_size;
+                p2       += ps_p * dt_p_size;
                 rscat_c2 += panel_dim_max;
                 rbs_c2   += 1;
                 left     -= panel_dim;
