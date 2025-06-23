@@ -1,8 +1,21 @@
 AC_PREREQ([2.70])
-AC_INIT([tblis],[1.2.0],[damatthews@smu.edu],[tblis],[http://www.github.com/devinamatthews/tblis])
+AC_INIT([tblis],[1.3.0],[damatthews@smu.edu],[tblis],[http://www.github.com/devinamatthews/tblis])
 AM_INIT_AUTOMAKE([foreign silent-rules subdir-objects])
 AM_SILENT_RULES([yes])
 AM_MAINTAINER_MODE([disable])
+
+VERSION_MAJOR=${PACKAGE_VERSION%%.*}
+VERSION_MINOR=${PACKAGE_VERSION#*.}
+VERSION_PATCH=${VERSION_MINOR#*.}
+if test "x$VERSION_PATCH" = x"$VERSION_MINOR"; then
+    VERSION_PATCH=0
+else
+    VERSION_MINOR=${VERSION_MINOR%%.*}
+fi
+
+AC_DEFINE_UNQUOTED([VERSION_MAJOR], [$VERSION_MAJOR], [Major version number.])
+AC_DEFINE_UNQUOTED([VERSION_MINOR], [$VERSION_MINOR], [Minor version number.])
+AC_DEFINE_UNQUOTED([VERSION_PATCH], [$VERSION_PATCH], [Patch version number.])
 
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -39,7 +52,7 @@ AC_DEFINE_UNQUOTED([TOPDIR], [$topdir], [The top source directory.])
 
 AC_ARG_WITH([memkind], AS_HELP_STRING([--without-memkind],
     [do not attempt to link with the memkind library]))
-    
+
 if test "x$with_memkind" != "xno"; then
     AC_CHECK_HEADERS([hbwmalloc.h memkind.h])
     AC_SEARCH_LIBS([hbw_malloc], [memkind])
@@ -51,7 +64,7 @@ fi
 
 AC_ARG_WITH([hwloc], AS_HELP_STRING([--without-hwloc],
     [do not attempt to link with the hwloc library]))
-    
+
 if test "x$with_hwloc" != "xno"; then
     AC_CHECK_HEADERS([hwloc.h])
     AC_SEARCH_LIBS([hwloc_topology_init], [hwloc])
@@ -138,14 +151,14 @@ AC_DEFINE_UNQUOTED([LABEL_TYPE], [$label_type], [label_type])
 AC_ARG_ENABLE([config],
 [  --enable-config=...    a comma-separated list of configurations
                           @<:@default=auto@:>@
-  
+
                           possible values are:
-                          
+
                           reference, bulldozer, piledriver, excavator, zen,
                           core2, sandybridge, haswell, skx1, skx2, knl, auto
 
                           the following meta-configurations are also available:
- 
+
                           skx = skx1,skx2
                           intel = core2,sandybridge,haswell,skx,knl
                           amd = bulldozer,piledriver,excavator,zen
@@ -172,7 +185,7 @@ if echo $enable_config | grep -q auto; then
 #    AC_CHECK_DEFINE([__bgq__], [enable_config=bgq])
 #    AC_CHECK_DEFINE([__mips], [enable_config=loongson3a])
 fi
-                             
+
 if ( echo $enable_config | grep -qv reference ) && test x$using_default_configs = xyes; then
     enable_config="${enable_config},reference"
 fi
@@ -200,8 +213,8 @@ if test x"$vendor_string" = x; then
     AC_MSG_ERROR([Unable to determine compiler vendor.])
 fi
 
-cc_vendor=`echo $vendor_string | $EGREP -oi 'icc|gcc|clang|emcc|pnacl|IBM|gnu-cc' | tr 'A-Z' 'a-z' | { read first rest ; echo $first ; }`
-if test x"$cc_vendor" = "xgnu-cc"; then
+cc_vendor=`echo $vendor_string | $EGREP -oi 'icc|gcc|clang|emcc|pnacl|IBM|gnu-cc|Free Software Foundation' | tr 'A-Z' 'a-z' | { read first rest ; echo $first ; }`
+if test x"$cc_vendor" = "xgnu-cc" || test x"$cc_vendor" = "xfree"; then
     cc_vendor=gcc
 fi
 if test x"$cc_vendor" = x; then
@@ -453,7 +466,7 @@ LT_INIT
 
 mkdir -p bin
 
-AC_CONFIG_FILES([Makefile 
+AC_CONFIG_FILES([Makefile
                  src/configs/foreach_type.h
                  src/configs/foreach_config.h
                  src/configs/foreach_config_and_type.h
