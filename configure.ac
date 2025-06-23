@@ -8,8 +8,8 @@ AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_HEADERS(config.h)
 
-: ${CFLAGS="-O3"}
-: ${CXXFLAGS="-O3"}
+: ${CFLAGS="-O2 -g"}
+: ${CXXFLAGS="-O2 -g"}
 CXXFLAGS="$CXXFLAGS -Wno-return-type-c-linkage"
 
 AC_PROG_CC([icc gcc clang])
@@ -21,7 +21,7 @@ AM_PROG_AS
 AC_PROG_EGREP
 AC_PROG_AWK
 AC_PROG_CXX([icpc g++ clang++])
-AX_CXX_COMPILE_STDCXX([17], [noext])
+AX_CXX_COMPILE_STDCXX([20], [noext])
 
 #
 # Apple's sys/cdefs.h redefines __restrict to null in C++ mode (!!!!!!)
@@ -194,6 +194,8 @@ if test "x$blis_dir" != "xdownload"; then
         blis_dir="$BLIS_PREFIX"
     fi
 fi
+
+AC_SUBST([CONFIG_STATUS_DEPENDENCIES], ['$(top_srcdir)/blis-git-tag'])
 
 if test "x$blis_dir" = "xdownload"; then
     BLIS_REPO=https://github.com/flame/blis

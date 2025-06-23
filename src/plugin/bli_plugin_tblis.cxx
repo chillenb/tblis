@@ -3,15 +3,15 @@
 namespace tblis
 {
 
-siz_t GEMM_BSMTC_UKR = -1;
-siz_t PACKM_BSMTC_UKR = -1;
-siz_t MULT_KER = -1;
-siz_t REDUCE_KER = -1;
-siz_t SHIFT_KER = -1;
-siz_t TRANS_KER = -1;
-siz_t MRT_BSZ = -1;
-siz_t NRT_BSZ = -1;
-siz_t KE_BSZ = -1;
+kerid_t GEMM_BSMTC_UKR = -1;
+kerid_t PACKM_BSMTC_UKR = -1;
+kerid_t MULT_KER = -1;
+kerid_t REDUCE_KER = -1;
+kerid_t SHIFT_KER = -1;
+kerid_t TRANS_KER = -1;
+kerid_t MRT_BSZ = -1;
+kerid_t NRT_BSZ = -1;
+kerid_t KE_BSZ = -1;
 
 err_t register_plugin()
 {

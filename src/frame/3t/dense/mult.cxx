@@ -17,6 +17,9 @@
 
 #include <numeric>
 
+#include <span>
+#include "src/external/stl_ext/stl_ext/iostream.hpp"
+
 using gemm_vfp = void (*)(      trans_t transa, \
                                 trans_t transb, \
                                 dim_t   m, \
@@ -216,31 +219,48 @@ void gemm_blis(type_t type, const communicator& comm, const cntx_t* cntx,
 }
 
 void gemm_bsmtc_blis(type_t type, const communicator& comm, const cntx_t* cntx,
-                     len_type nblock_AC, int ndim_AC, const len_type* len_AC, bool pack_3d_AC,
-                     len_type nblock_BC, int ndim_BC, const len_type* len_BC, bool pack_3d_BC,
-                     len_type nblock_AB, int ndim_AB, const len_type* len_AB, bool pack_3d_AB,
-                     const scalar& alpha, bool conj_A, const char* A, const stride_type* block_off_A_AC, const stride_type* block_off_A_AB, const stride_type* stride_A_AC, const stride_type* stride_A_AB,
-                                          bool conj_B, const char* B, const stride_type* block_off_B_BC, const stride_type* block_off_B_AB, const stride_type* stride_B_BC, const stride_type* stride_B_AB,
-                     const scalar& beta_, bool conj_C,       char* C, const stride_type* block_off_C_AC, const stride_type* block_off_C_BC, const stride_type* stride_C_AC, const stride_type* stride_C_BC)
+                     std::span<const len_type> len_AC, bool pack_3d_AC,
+                     std::span<const len_type> len_BC, bool pack_3d_BC,
+                     std::span<const len_type> len_AB, bool pack_3d_AB,
+                     const scalar& alpha, bool conj_A, const char* A, std::span<const stride_type> block_off_A_AC, std::span<const stride_type> block_off_A_AB, std::span<const stride_type> stride_A_AC, std::span<const stride_type> stride_A_AB,
+                                          bool conj_B, const char* B, std::span<const stride_type> block_off_B_BC, std::span<const stride_type> block_off_B_AB, std::span<const stride_type> stride_B_BC, std::span<const stride_type> stride_B_AB,
+                     const scalar& beta_, bool conj_C,       char* C, std::span<const stride_type> block_off_C_AC, std::span<const stride_type> block_off_C_BC, std::span<const stride_type> stride_C_AC, std::span<const stride_type> stride_C_BC)
 {
     stride_type zero = 0;
-    if (!block_off_A_AC) block_off_A_AC = &zero;
-    if (!block_off_A_AB) block_off_A_AB = &zero;
-    if (!block_off_B_BC) block_off_B_BC = &zero;
-    if (!block_off_B_AB) block_off_B_AB = &zero;
-    if (!block_off_C_AC) block_off_C_AC = &zero;
-    if (!block_off_C_BC) block_off_C_BC = &zero;
+    if (!block_off_A_AC.data()) block_off_A_AC = std::span(&zero, 1);
+    if (!block_off_A_AB.data()) block_off_A_AB = std::span(&zero, 1);
+    if (!block_off_B_BC.data()) block_off_B_BC = std::span(&zero, 1);
+    if (!block_off_B_AB.data()) block_off_B_AB = std::span(&zero, 1);
+    if (!block_off_C_AC.data()) block_off_C_AC = std::span(&zero, 1);
+    if (!block_off_C_BC.data()) block_off_C_BC = std::span(&zero, 1);
+
+    int ndim_AC = len_AC.size();
+    int ndim_BC = len_BC.size();
+    int ndim_AB = len_AB.size();
+    len_type nblock_AC = block_off_A_AC.size();
+    len_type nblock_BC = block_off_B_BC.size();
+    len_type nblock_AB = block_off_A_AB.size();
+
+    TBLIS_ASSERT(len_AC.size() == stride_A_AC.size());
+    TBLIS_ASSERT(len_AC.size() == stride_C_AC.size());
+    TBLIS_ASSERT(len_BC.size() == stride_B_BC.size());
+    TBLIS_ASSERT(len_BC.size() == stride_C_BC.size());
+    TBLIS_ASSERT(len_AB.size() == stride_A_AB.size());
+    TBLIS_ASSERT(len_AB.size() == stride_B_AB.size());
+    TBLIS_ASSERT(block_off_A_AC.size() == block_off_C_AC.size());
+    TBLIS_ASSERT(block_off_B_BC.size() == block_off_C_BC.size());
+    TBLIS_ASSERT(block_off_A_AB.size() == block_off_B_AB.size());
 
     obj_t ao, bo, co, alpo, beto;
     auto beta = beta_;
 
-    auto m = std::reduce(len_AC, len_AC+ndim_AC, len_type{1}, std::multiplies<len_type>{}) * nblock_AC;
-    auto n = std::reduce(len_BC, len_BC+ndim_BC, len_type{1}, std::multiplies<len_type>{}) * nblock_BC;
-    auto k = std::reduce(len_AB, len_AB+ndim_AB, len_type{1}, std::multiplies<len_type>{}) * nblock_AB;
+    auto m = std::reduce(len_AC.begin(), len_AC.end(), len_type{1}, std::multiplies<len_type>{}) * nblock_AC;
+    auto n = std::reduce(len_BC.begin(), len_BC.end(), len_type{1}, std::multiplies<len_type>{}) * nblock_BC;
+    auto k = std::reduce(len_AB.begin(), len_AB.end(), len_type{1}, std::multiplies<len_type>{}) * nblock_AB;
 
-    auto at = stride_A_AB[0] < stride_A_AC[0];
-    auto bt = stride_B_BC[0] < stride_B_AB[0];
-    auto ct = stride_C_BC[0] < stride_C_AC[0];
+    auto at = (ndim_AB ? stride_A_AB[0] : 1) < (ndim_AC ? stride_A_AC[0] : 1);
+    auto bt = (ndim_BC ? stride_B_BC[0] : 1) < (ndim_AB ? stride_B_AB[0] : 1);
+    auto ct = (ndim_BC ? stride_C_BC[0] : 1) < (ndim_AC ? stride_C_AC[0] : 1);
 
     bli_obj_create_with_attached_buffer((num_t)type, m, k, (void*)A, at ? k : 1, at ? 1 : m, &ao);
     bli_obj_create_with_attached_buffer((num_t)type, k, n, (void*)B, bt ? n : 1, bt ? 1 : k, &bo);
@@ -256,11 +276,11 @@ void gemm_bsmtc_blis(type_t type, const communicator& comm, const cntx_t* cntx,
     {
         auto ts = type_size[type];
 
-        len_vector len_C(len_AC, len_AC+ndim_AC);
-        len_C.insert(len_C.end(), len_BC, len_BC+ndim_BC);
+        len_vector len_C(len_AC.begin(), len_AC.end());
+        len_C.insert(len_C.end(), len_BC.begin(), len_BC.end());
 
-        len_vector stride_C(stride_C_AC, stride_C_AC+ndim_AC);
-        stride_C.insert(stride_C.end(), stride_B_BC, stride_B_BC+ndim_BC);
+        len_vector stride_C(stride_C_AC.begin(), stride_C_AC.end());
+        stride_C.insert(stride_C.end(), stride_B_BC.begin(), stride_B_BC.end());
 
         for (auto i : range(nblock_AC))
         for (auto j : range(nblock_BC))
@@ -271,7 +291,7 @@ void gemm_bsmtc_blis(type_t type, const communicator& comm, const cntx_t* cntx,
     }
 
     gemm_cntl_t cntl;
-    bli_gemm_cntl_init
+    auto trans = bli_gemm_cntl_init
     (
       bli_dt_dom_is_complex((num_t)type) ? bli_gemmind_find_avail((num_t)type) : BLIS_NAT,
       BLIS_GEMM,
@@ -287,27 +307,25 @@ void gemm_bsmtc_blis(type_t type, const communicator& comm, const cntx_t* cntx,
     bsmtc_params params_A, params_B, params_C;
 
     params_A.nblock = {nblock_AC, nblock_AB};
-    params_A.block_off = {block_off_A_AC, block_off_A_AB};
+    params_A.block_off = {block_off_A_AC.data(), block_off_A_AB.data()};
     params_A.ndim = {ndim_AC, ndim_AB};
-    params_A.len = {len_AC, len_AB};
-    params_A.stride = {stride_A_AC, stride_A_AB};
+    params_A.len = {len_AC.data(), len_AB.data()};
+    params_A.stride = {stride_A_AC.data(), stride_A_AB.data()};
     params_A.pack_3d = {pack_3d_AC, pack_3d_AB};
 
     params_B.nblock = {nblock_BC, nblock_AB};
-    params_B.block_off = {block_off_B_BC, block_off_B_AB};
+    params_B.block_off = {block_off_B_BC.data(), block_off_B_AB.data()};
     params_B.ndim = {ndim_BC, ndim_AB};
-    params_B.len = {len_BC, len_AB};
-    params_B.stride = {stride_B_BC, stride_B_AB};
+    params_B.len = {len_BC.data(), len_AB.data()};
+    params_B.stride = {stride_B_BC.data(), stride_B_AB.data()};
     params_B.pack_3d = {pack_3d_BC, pack_3d_AB};
 
     params_C.nblock = {nblock_AC, nblock_BC};
-    params_C.block_off = {block_off_C_AC, block_off_C_BC};
+    params_C.block_off = {block_off_C_AC.data(), block_off_C_BC.data()};
     params_C.ndim = {ndim_AC, ndim_BC};
-    params_C.len = {len_AC, len_BC};
-    params_C.stride = {stride_C_AC, stride_C_BC};
+    params_C.len = {len_AC.data(), len_BC.data()};
+    params_C.stride = {stride_C_AC.data(), stride_C_BC.data()};
     params_C.pack_3d = {pack_3d_AC, pack_3d_BC};
-
-    auto trans = bli_obj_buffer(&ao) == B;
 
     bli_gemm_cntl_set_packa_var(packm_blk_bsmtc, &cntl);
     bli_gemm_cntl_set_packb_var(packm_blk_bsmtc, &cntl);
@@ -578,10 +596,14 @@ void mult_blis(type_t type, const communicator& comm, const cntx_t* cntx,
                  (unit_A_AB == (int)len_AB.size() &&
                   unit_B_AB == (int)len_AB.size()));
 
-    bool pack_M_3d = unit_A_AC > 0 && unit_A_AC < (int)len_AC.size();
-    bool pack_N_3d = unit_B_BC > 0 && unit_B_BC < (int)len_BC.size();
-    bool pack_K_3d = (unit_A_AB > 0 && unit_A_AB < (int)len_AB.size()) ||
-                     (unit_B_AB > 0 && unit_B_AB < (int)len_AB.size());
+    //bool pack_M_3d = unit_A_AC > 0 && unit_A_AC < (int)len_AC.size();
+    //bool pack_N_3d = unit_B_BC > 0 && unit_B_BC < (int)len_BC.size();
+    //bool pack_K_3d = (unit_A_AB > 0 && unit_A_AB < (int)len_AB.size()) ||
+    //                 (unit_B_AB > 0 && unit_B_AB < (int)len_AB.size());
+
+    bool pack_M_3d = false;
+    bool pack_N_3d = false;
+    bool pack_K_3d = false;
 
     if (pack_M_3d)
         std::rotate(reorder_AC.begin()+1, reorder_AC.begin()+unit_A_AC, reorder_AC.end());
@@ -636,13 +658,14 @@ void mult_blis(type_t type, const communicator& comm, const cntx_t* cntx,
         {
             iter_ABC.next(A1, B1, C1);
 
-            gemm_bsmtc_blis(type, comm, cntx,
-                            1, len_AC_r.size(), len_AC_r.data(), pack_M_3d,
-                            1, len_BC_r.size(), len_BC_r.data(), pack_N_3d,
-                            1, len_AB_r.size(), len_AB_r.data(), pack_K_3d,
-                            alpha, conj_A, A + A1*ts, nullptr, nullptr, stride_A_AC_r.data(), stride_A_AB_r.data(),
-                                   conj_B, B + B1*ts, nullptr, nullptr, stride_B_BC_r.data(), stride_B_AB_r.data(),
-                             beta, conj_C, C + C1*ts, nullptr, nullptr, stride_C_AC_r.data(), stride_C_BC_r.data());
+            auto empty = make_span<stride_type>();
+            gemm_bsmtc_blis(type, subcomm, cntx,
+                            make_span(len_AC_r), pack_M_3d,
+                            make_span(len_BC_r), pack_N_3d,
+                            make_span(len_AB_r), pack_K_3d,
+                            alpha, conj_A, A + A1*ts, empty, empty, make_span(stride_A_AC_r), make_span(stride_A_AB_r),
+                                   conj_B, B + B1*ts, empty, empty, make_span(stride_B_BC_r), make_span(stride_B_AB_r),
+                             beta, conj_C, C + C1*ts, empty, empty, make_span(stride_C_AC_r), make_span(stride_C_BC_r));
         }
     });
 }
@@ -690,7 +713,9 @@ void mult_blas(type_t type, const communicator& comm, const cntx_t* cntx,
     auto n = stl_ext::prod(len_BC);
     auto k = stl_ext::prod(len_AB);
 
-    char *a, *b, *c;
+    char *a = nullptr;
+    char *b = nullptr;
+    char *c = nullptr;
     if (comm.master())
     {
         a = new char[m * k * type_size[type]];
@@ -720,12 +745,11 @@ void mult_blas(type_t type, const communicator& comm, const cntx_t* cntx,
                  one, conj_B, B + (B1-B)*ts, {}, stride_B_BC+stride_B_AB,
                 zero,  false,             b, {}, stride_B);
 
-            //TODO: need to bypass thread decorator?
-            gemm_fpa[type](BLIS_NO_TRANSPOSE, BLIS_TRANSPOSE,
-                           m, n, k,
-                           alpha.raw(), a, 1, m,
-                                        b, 1, n,
-                            zero.raw(), c, 1, m);
+            gemm_blis(type, comm, cntx,
+                      m, n, k,
+                      alpha, false, a, 1, m,
+                             false, b, n, 1,
+                       zero, false, c, 1, m);
 
             add(type, comm, cntx, {}, {}, len_AC+len_BC,
                  one,  false,             c, {}, stride_C,
@@ -846,7 +870,7 @@ void mult_vec(type_t type, const communicator& comm, const cntx_t* cntx,
     for (auto i : range(1,stride_B_ABC.size())) stride_B1.push_back(stride_B_ABC[i]*ts);
     for (auto i : range(1,stride_C_ABC.size())) stride_C1.push_back(stride_C_ABC[i]*ts);
 
-    auto mult_ukr = reinterpret_cast<mult_ft>(bli_cntx_get_ukr_dt((num_t)type, (ukr_t)MULT_KER, cntx));
+    auto mult_ukr = reinterpret_cast<mult_ft>(bli_cntx_get_ukr_dt((num_t)type, MULT_KER, cntx));
 
     comm.distribute_over_threads(n0, n1,
     [&](len_type n0_min, len_type n0_max, len_type n1_min, len_type n1_max)

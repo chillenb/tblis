@@ -50,9 +50,6 @@ auto block_to_full(type_t type, const communicator& comm, const cntx_t* cntx,
     auto A2 = comm.master() ? new char[size_A*ts]() : nullptr;
     comm.broadcast_value(A2);
 
-    if (comm.master())
-        memset(A2, 0, size_A*ts);
-
     A.for_each_block(
     [&](auto&& local_A, auto&& irreps_A)
     {

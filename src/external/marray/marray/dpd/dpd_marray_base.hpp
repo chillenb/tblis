@@ -20,8 +20,7 @@ struct dpd_layout
 
     layout base() const;
 
-    bool operator==(dpd_layout other) const { return type == other.type; }
-    bool operator!=(dpd_layout other) const { return type != other.type; }
+    bool operator==(const dpd_layout&) const = default;
 };
 
 struct balanced_column_major_layout : dpd_layout
@@ -777,6 +776,9 @@ class dpd_marray_base : protected detail::dpd_base
             MARRAY_ASSERT(nirrep_ == other.nirrep_);
             MARRAY_ASSERT(irrep_ == other.irrep_);
 
+            if (!ndim)
+                return static_cast<Derived&>(*this);
+
             for (auto i : range(ndim))
                 MARRAY_ASSERT(lengths(i) == other.lengths(i));
 
@@ -797,6 +799,8 @@ class dpd_marray_base : protected detail::dpd_base
         Derived& operator=(const Type& value)
         {
             auto ndim = dimension();
+            if (!ndim)
+                return static_cast<Derived&>(*this);
 
             irrep_iterator it(irrep(), num_irreps(), ndim);
             irrep_vector irreps(ndim);

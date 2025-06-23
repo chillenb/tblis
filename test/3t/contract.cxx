@@ -27,10 +27,6 @@ void random_contract(stride_type N, T&& A, label_vector& idx_A,
            ndim_BC < 0 ||
            (ndim_A+ndim_B+ndim_C)%2 != 0);
 
-    ndim_AB = 1;
-    ndim_AC = 2;
-    ndim_BC = 1;
-
     random_tensors(N,
                    0, 0, 0,
                    ndim_AB, ndim_AC, ndim_BC,
@@ -48,6 +44,10 @@ REPLICATED_TEMPLATED_TEST_CASE(contract, R, T, all_types)
     random_contract(N, A, idx_A, B, idx_B, C, idx_C);
 
     T scale(10.0*random_unit<T>());
+    scale = 1;
+    A = 1;
+    B = 1;
+    C = 0;
 
     TENSOR_INFO(A);
     TENSOR_INFO(B);
@@ -208,6 +208,12 @@ REPLICATED_TEMPLATED_TEST_CASE(indexed_dpd_contract, R, T, all_types)
     dpd_impl = dpd_impl_t::FULL;
     E.reset(C);
     mult<T>(scale, A, idx_A, B, idx_B, scale, E, idx_C);
+
+    //PRINT_TENSOR(A)
+    //PRINT_TENSOR(B)
+    //PRINT_TENSOR(C)
+    //PRINT_TENSOR(D)
+    //PRINT_TENSOR(E)
 
     for (auto& f : E.factors()) f = T(1);
     for (auto& f : D.factors()) f = T(1);

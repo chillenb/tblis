@@ -44,9 +44,6 @@ void gemm_ker_dpd
     auto off_m    = bli_obj_row_off(c);
     auto off_n    = bli_obj_col_off(c);
 
-    // If any dimension is zero, return immediately.
-    if ( bli_zero_dim3( m, n, k ) ) return;
-
     // Detach and multiply the scalars attached to A and B.
     // NOTE: We know that the internal scalars of A and B are already of the
     // target datatypes because the necessary typecasting would have already
@@ -73,7 +70,7 @@ void gemm_ker_dpd
     auto MR = pd_a;
     auto NR = pd_b;
 
-    auto  gemm_ukr = reinterpret_cast<gemm_bsmtc_ft>(bli_cntx_get_ukr_dt(dt_c, (ukr_t)GEMM_BSMTC_UKR, cntx));
+    auto  gemm_ukr = reinterpret_cast<gemm_bsmtc_ft>(bli_cntx_get_ukr_dt(dt_c, GEMM_BSMTC_UKR, cntx));
     auto& params   = *static_cast<const dpd_params*>(bli_gemm_var_cntl_real_ukr(cntl) ?
                                                      bli_gemm_var_cntl_real_params(cntl) :
                                                      bli_gemm_var_cntl_params(cntl));
@@ -111,7 +108,7 @@ void gemm_ker_dpd
              n_patch_off0) = get_patches(n, off_n, NR, params.patch_size[1]);
 
     auto scat_size = sizeof(inc_t) * (m + n + m_iter_all + n_iter_all);
-    auto rscat_c = static_cast<inc_t*>(bli_packm_alloc_ex(scat_size, BLIS_BUFFER_FOR_GEN_USE, thread));
+    auto rscat_c = static_cast<inc_t*>(bli_packm_alloc_ex(scat_size, BLIS_BUFFER_FOR_GEN_USE, thread_par));
     auto cscat_c = rscat_c + m;
     auto rbs_c   = cscat_c + n;
     auto cbs_c   = rbs_c + m_iter_all;
@@ -176,14 +173,14 @@ void gemm_ker_dpd
 
 #endif
 
-            bli_thrinfo_barrier(thread);
+            bli_thrinfo_barrier(thread_par);
 
             auto c0 = fill_block_scatter(dt_c_size, bli_thrinfo_am_chief(thread), params, MR, NR,
                                          m_patch, m_patch_off, m_patch_size,
                                          n_patch, n_patch_off, n_patch_size,
                                          rscat_c, cscat_c, rbs_c, cbs_c);
 
-            bli_thrinfo_barrier(thread);
+            bli_thrinfo_barrier(thread_par);
 
             // Loop over the n dimension (NR columns at a time).
             for ( dim_t j = jr_start; j < jr_end && n_ut_for_me; j += jr_inc )

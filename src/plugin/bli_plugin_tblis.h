@@ -10,15 +10,15 @@ namespace tblis
 // Kernel and blocksize IDs
 //
 
-extern siz_t GEMM_BSMTC_UKR;
-extern siz_t PACKM_BSMTC_UKR;
-extern siz_t MULT_KER;
-extern siz_t REDUCE_KER;
-extern siz_t SHIFT_KER;
-extern siz_t TRANS_KER;
-extern siz_t MRT_BSZ;
-extern siz_t NRT_BSZ;
-extern siz_t KE_BSZ;
+extern kerid_t GEMM_BSMTC_UKR;
+extern kerid_t PACKM_BSMTC_UKR;
+extern kerid_t MULT_KER;
+extern kerid_t REDUCE_KER;
+extern kerid_t SHIFT_KER;
+extern kerid_t TRANS_KER;
+extern kerid_t MRT_BSZ;
+extern kerid_t NRT_BSZ;
+extern kerid_t KE_BSZ;
 
 //
 // Kernels and structures

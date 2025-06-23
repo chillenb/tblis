@@ -43,9 +43,6 @@ void gemm_ker_bsmtc
     auto off_m    = bli_obj_row_off(c);
     auto off_n    = bli_obj_col_off(c);
 
-    // If any dimension is zero, return immediately.
-    if ( bli_zero_dim3( m, n, k ) ) return;
-
     // Detach and multiply the scalars attached to A and B.
     // NOTE: We know that the internal scalars of A and B are already of the
     // target datatypes because the necessary typecasting would have already
@@ -72,7 +69,7 @@ void gemm_ker_bsmtc
     auto MR = pd_a;
     auto NR = pd_b;
 
-    auto gemm_ukr = reinterpret_cast<gemm_bsmtc_ft>(bli_cntx_get_ukr_dt(dt_c, (ukr_t)GEMM_BSMTC_UKR, cntx));
+    auto gemm_ukr = reinterpret_cast<gemm_bsmtc_ft>(bli_cntx_get_ukr_dt(dt_c, GEMM_BSMTC_UKR, cntx));
     auto params   = static_cast<const bsmtc_params*>(bli_gemm_var_cntl_real_ukr(cntl) ?
                                                      bli_gemm_var_cntl_real_params(cntl) :
                                                      bli_gemm_var_cntl_params(cntl));
@@ -171,7 +168,7 @@ void gemm_ker_bsmtc
 #endif
 
     auto scat_size = sizeof(inc_t) * (m_iter*(MR+1) + n_iter*(NR+1));
-    auto rscat_c = static_cast<inc_t*>(bli_packm_alloc_ex(scat_size, BLIS_BUFFER_FOR_GEN_USE, thread));
+    auto rscat_c = static_cast<inc_t*>(bli_packm_alloc_ex(scat_size, BLIS_BUFFER_FOR_GEN_USE, thread_par));
     auto cscat_c = rscat_c + MR*m_iter;
     auto rbs_c   = cscat_c + NR*n_iter;
     auto cbs_c   = rbs_c + m_iter;
@@ -182,6 +179,10 @@ void gemm_ker_bsmtc
     dim_t m_start, m_end, m_inc;
     bli_thread_range_sl(irjr_tid, irjr_nt, m_iter, 1, FALSE, &m_start, &m_end, &m_inc);
 
+    dim_t n_start, n_end, n_inc;
+    bli_thread_range_sl(irjr_tid, irjr_nt, n_iter, 1, FALSE, &n_start, &n_end, &n_inc);
+
+    if (m_start < m_iter)
     fill_block_scatter(dt_c_size,
                        params->nblock[0],
                        params->block_off[0],
@@ -195,9 +196,7 @@ void gemm_ker_bsmtc
                        rbs_c + m_start,
                        params->pack_3d[0]);
 
-    dim_t n_start, n_end, n_inc;
-    bli_thread_range_sl(irjr_tid, irjr_nt, n_iter, 1, FALSE, &n_start, &n_end, &n_inc);
-
+    if (n_start < n_iter)
     fill_block_scatter(dt_c_size,
                        params->nblock[1],
                        params->block_off[1],
@@ -211,15 +210,10 @@ void gemm_ker_bsmtc
                        cbs_c + n_start,
                        params->pack_3d[1]);
 
-    bli_thrinfo_barrier(thread);
-
-    // It's possible that there are so few microtiles relative to the number
-    // of threads that one or more threads gets no work. If that happens, those
-    // threads can return early.
-    if ( n_ut_for_me == 0 ) return;
+    bli_thrinfo_barrier(thread_par);
 
     // Loop over the n dimension (NR columns at a time).
-    for ( dim_t j = jr_start; j < jr_end; j += jr_inc )
+    for ( dim_t j = jr_start; j < jr_end && n_ut_for_me; j += jr_inc )
     {
         auto b1 = b_cast + j * cstep_b;
 
@@ -230,7 +224,7 @@ void gemm_ker_bsmtc
         auto b2 = b1;
 
         // Loop over the m dimension (MR rows at a time).
-        for ( dim_t i = ir_start; i < ir_end; i += ir_inc )
+        for ( dim_t i = ir_start; i < ir_end && n_ut_for_me; i += ir_inc )
         {
             auto a1  = a_cast + i * rstep_a;
 
@@ -269,7 +263,7 @@ void gemm_ker_bsmtc
 
             // Decrement the number of microtiles assigned to the thread; once
             // it reaches zero, return immediately.
-            n_ut_for_me -= 1; if ( n_ut_for_me == 0 ) return;
+            n_ut_for_me--;
         }
 
         ir_start = ir_next;

@@ -26,7 +26,7 @@ void shift(type_t type, const communicator& comm, const cntx_t* cntx,
     len_vector stride1;
     for (auto i : range(1,len_A.size())) stride1.push_back(stride_A[i]*ts);
 
-    auto shift_ukr = reinterpret_cast<shift_ft>(bli_cntx_get_ukr_dt((num_t)type, (ukr_t)SHIFT_KER, cntx));
+    auto shift_ukr = reinterpret_cast<shift_ft>(bli_cntx_get_ukr_dt((num_t)type, SHIFT_KER, cntx));
 
     comm.distribute_over_threads(n0, n1,
     [&](len_type n0_min, len_type n0_max, len_type n1_min, len_type n1_max)

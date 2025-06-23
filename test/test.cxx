@@ -1358,6 +1358,17 @@ void random_tensors(stride_type N, \
                     indexed_dpd_marray<T>& C, label_vector& idx_C);
 DO_FOREACH_TYPE
 
+static void handler(int signum)
+{
+    fprintf(stderr, "Signal %d, waiting for debugger\n", signum);
+    fprintf(stderr, "PID: %d\n", getpid());
+    signal(SIGSEGV, handler);
+    signal(SIGABRT, handler);
+    signal(SIGBUS, handler);
+    signal(SIGFPE, handler);
+    pause();
+}
+
 int main(int argc, char **argv)
 {
     time_t seed = duration_cast<nanoseconds>(
@@ -1402,6 +1413,12 @@ int main(int argc, char **argv)
                 ::abort();
         }
     }
+
+    printf("Installing signal handlers...\n\n");
+    signal(SIGSEGV, handler);
+    signal(SIGABRT, handler);
+    signal(SIGBUS, handler);
+    signal(SIGFPE, handler);
 
     cout << "Using mt19937 with seed " << seed << endl;
     rand_engine.seed(seed);

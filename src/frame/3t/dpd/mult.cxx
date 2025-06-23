@@ -41,7 +41,7 @@ void gemm_dpd_blis(type_t type, const communicator& comm, const cntx_t* cntx,
                    const dim_vector& extra_dim_B,
                    const irrep_vector& extra_irreps_B,
                    const len_vector& extra_idx_B,
-                   const scalar& beta,  bool conj_C, const dpd_marray_view<char>& C,
+                                                     const dpd_marray_view<char>& C,
                    const dim_vector& idx_C_AC, int unit_C_AC,
                    const dim_vector& idx_C_BC, int unit_C_BC,
                    const dim_vector& extra_dim_C,
@@ -49,8 +49,7 @@ void gemm_dpd_blis(type_t type, const communicator& comm, const cntx_t* cntx,
                    const len_vector& extra_idx_C)
 {
     auto ts = type_size[type];
-    scalar one(0.0, type);
-    obj_t ao, bo, co, alpo, beto;
+    obj_t ao, bo, co, alpo;
 
     dpd_params params_A(A, idx_A_AC, idx_A_AB, irrep_AB, extra_dim_A, extra_irreps_A, extra_idx_A, pack_3d_AC, pack_3d_AB);
     dpd_params params_B(B, idx_B_BC, idx_B_AB, irrep_AB, extra_dim_B, extra_irreps_B, extra_idx_B, pack_3d_BC, pack_3d_AB);
@@ -69,90 +68,25 @@ void gemm_dpd_blis(type_t type, const communicator& comm, const cntx_t* cntx,
     bli_obj_create_with_attached_buffer((num_t)type, m, n, (void*)C.data(), rs_C, cs_C, &co);
 
     bli_obj_create_1x1_with_attached_buffer((num_t)type, (void*)&alpha, &alpo);
-    bli_obj_create_1x1_with_attached_buffer((num_t)type, (void*)&beta, &beto);
 
     if (conj_A) bli_obj_toggle_conj(&ao);
     if (conj_B) bli_obj_toggle_conj(&bo);
 
-    if (conj_C && !beta.is_zero() && bli_dt_dom_is_complex((num_t)type))
-    {
-        irrep_iterator row_it(irrep_AC, nirrep, idx_C_AC.size());
-        irrep_iterator col_it(irrep_BC, nirrep, idx_C_BC.size());
-
-        irrep_vector irreps(C.dimension());
-
-        while (row_it.next())
-        {
-            for (auto i : range(idx_C_AC.size()))
-                irreps[idx_C_AC[i]] = row_it.irrep(i);
-
-            while (col_it.next())
-            {
-                for (auto i : range(idx_C_BC.size()))
-                    irreps[idx_C_BC[i]] = col_it.irrep(i);
-
-                marray_view<char> local_C = C(irreps);
-
-                scale(type, comm, cntx, local_C.lengths(),
-                      one, conj_C, C.data() + (local_C.data()-C.data())*ts, local_C.strides());
-            }
-        }
-
-        conj_C = false;
-    }
-
-    if (m == 0 || n == 0) return;
-
-    if (k == 0 && !beta.is_one())
-    {
-        irrep_iterator row_it(irrep_AC, nirrep, idx_C_AC.size());
-        irrep_iterator col_it(irrep_BC, nirrep, idx_C_BC.size());
-
-        irrep_vector irreps(C.dimension());
-
-        while (row_it.next())
-        {
-            for (auto i : range(idx_C_AC.size()))
-                irreps[idx_C_AC[i]] = row_it.irrep(i);
-
-            while (col_it.next())
-            {
-                for (auto i : range(idx_C_BC.size()))
-                    irreps[idx_C_BC[i]] = col_it.irrep(i);
-
-                marray_view<char> local_C = C(irreps);
-
-                if (beta.is_zero())
-                {
-                    set(type, comm, cntx, local_C.lengths(),
-                        beta, C.data() + (local_C.data()-C.data())*ts, local_C.strides());
-                }
-                else
-                {
-                    scale(type, comm, cntx, local_C.lengths(),
-                          beta, conj_C, C.data() + (local_C.data()-C.data())*ts, local_C.strides());
-                }
-            }
-        }
-
-        return;
-    }
+    if (m == 0 || n == 0 || k == 0) return;
 
     gemm_cntl_t cntl;
-    bli_gemm_cntl_init
+    auto trans = bli_gemm_cntl_init
     (
       bli_dt_dom_is_complex((num_t)type) ? bli_gemmind_find_avail((num_t)type) : BLIS_NAT,
       BLIS_GEMM,
       &alpo,
       &ao,
       &bo,
-      &beto,
+      &BLIS_ONE,
       &co,
       cntx,
       &cntl
     );
-
-    auto trans = bli_obj_buffer(&ao) == B.data();
 
     bli_gemm_cntl_set_packa_var(packm_blk_dpd, &cntl);
     bli_gemm_cntl_set_packb_var(packm_blk_dpd, &cntl);
@@ -177,11 +111,13 @@ void mult_full(type_t type, const communicator& comm, const cntx_t* cntx,
                const dim_vector& idx_B_AB,
                const dim_vector& idx_B_BC,
                const dim_vector& idx_B_ABC,
-               const scalar&  beta, bool conj_C, const dpd_marray_view<char>& C,
+                                                 const dpd_marray_view<char>& C,
                const dim_vector& idx_C_AC,
                const dim_vector& idx_C_BC,
                const dim_vector& idx_C_ABC)
 {
+    scalar one(1.0, type);
+
     auto [A2, len_A2, stride_A2] = block_to_full(type, comm, cntx, A);
     auto [B2, len_B2, stride_B2] = block_to_full(type, comm, cntx, B);
     auto [C2, len_C2, stride_C2] = block_to_full(type, comm, cntx, C);
@@ -203,7 +139,7 @@ void mult_full(type_t type, const communicator& comm, const cntx_t* cntx,
     mult(type, comm, cntx, len_AB, len_AC, len_BC, len_ABC,
          alpha, conj_A, A2, stride_A_AB, stride_A_AC, stride_A_ABC,
                 conj_B, B2, stride_B_AB, stride_B_BC, stride_B_ABC,
-          beta, conj_C, C2, stride_C_AC, stride_C_BC, stride_C_ABC);
+            one, false, C2, stride_C_AC, stride_C_BC, stride_C_ABC);
 
     full_to_block(type, comm, cntx, C2, len_C2, stride_C2, C);
 
@@ -224,11 +160,12 @@ void mult_blis(type_t type, const communicator& comm, const cntx_t* cntx,
                                     bool conj_B, const dpd_marray_view<char>& B,
                dim_vector idx_B_AB,
                dim_vector idx_B_ABC,
-               const scalar&  beta, bool conj_C, const dpd_marray_view<char>& C,
+                                                 const dpd_marray_view<char>& C,
                dim_vector idx_C_AC,
                dim_vector idx_C_ABC)
 {
     const len_type ts = type_size[type];
+    scalar one(1.0, type);
 
     const auto nirrep = A.num_irreps();
 
@@ -267,9 +204,6 @@ void mult_blis(type_t type, const communicator& comm, const cntx_t* cntx,
         auto stride_C_ABC = stl_ext::select_from(local_C.strides(), idx_C_ABC);
         auto stride_C_AC = stl_ext::select_from(local_C.strides(), idx_C_AC);
 
-        auto local_beta = beta;
-        bool local_conj_C = conj_C;
-
         while (irrep_it_AB.next())
         {
             for (auto i : range(idx_A_AB.size()))
@@ -289,12 +223,9 @@ void mult_blis(type_t type, const communicator& comm, const cntx_t* cntx,
             auto stride_B_AB = stl_ext::select_from(local_B.strides(), idx_B_AB);
 
             mult(type, comm, cntx, len_AB, len_AC, {}, len_ABC,
-                      alpha,       conj_A, A.data() + (local_A.data()-A.data())*ts, stride_A_AB, stride_A_AC, stride_A_ABC,
-                                   conj_B, B.data() + (local_B.data()-B.data())*ts, stride_B_AB, {}, stride_B_ABC,
-                 local_beta, local_conj_C, C.data() + (local_C.data()-C.data())*ts, stride_C_AC, {}, stride_C_ABC);
-
-            local_beta = 1;
-            local_conj_C = false;
+                 alpha, conj_A, A.data() + (local_A.data()-A.data())*ts, stride_A_AB, stride_A_AC, stride_A_ABC,
+                        conj_B, B.data() + (local_B.data()-B.data())*ts, stride_B_AB, {}, stride_B_ABC,
+                   one,  false, C.data() + (local_C.data()-C.data())*ts, stride_C_AC, {}, stride_C_ABC);
         }
     }
 }
@@ -307,12 +238,14 @@ void mult_blis(type_t type, const communicator& comm, const cntx_t* cntx,
                                     bool conj_B, const dpd_marray_view<char>& B,
                dim_vector idx_B_BC,
                dim_vector idx_B_ABC,
-               const scalar&  beta, bool conj_C, const dpd_marray_view<char>& C,
+                                                 const dpd_marray_view<char>& C,
                dim_vector idx_C_AC,
                dim_vector idx_C_BC,
                dim_vector idx_C_ABC)
 {
     const len_type ts = type_size[type];
+    scalar one(1.0, type);
+
     const auto nirrep = A.num_irreps();
     const auto irrep_ABC = A.irrep()^B.irrep()^C.irrep();
     const auto irrep_AC = A.irrep()^irrep_ABC;
@@ -367,7 +300,7 @@ void mult_blis(type_t type, const communicator& comm, const cntx_t* cntx,
         mult(type, comm, cntx, {}, len_AC, len_BC, len_ABC,
              alpha, conj_A, A.data() + (local_A.data()-A.data())*ts, {}, stride_A_AC, stride_A_ABC,
                     conj_B, B.data() + (local_B.data()-B.data())*ts, {}, stride_B_BC, stride_B_ABC,
-              beta, conj_C, C.data() + (local_C.data()-C.data())*ts, stride_C_AC, stride_C_BC, stride_C_ABC);
+               one,  false, C.data() + (local_C.data()-C.data())*ts, stride_C_AC, stride_C_BC, stride_C_ABC);
     }
 }
 
@@ -381,12 +314,13 @@ void mult_blis(type_t type, const communicator& comm, const cntx_t* cntx,
                dim_vector idx_B_AB,
                dim_vector idx_B_BC,
                dim_vector idx_B_ABC,
-               const scalar& beta,  bool conj_C, const dpd_marray_view<char>& C,
+                                                 const dpd_marray_view<char>& C,
                dim_vector idx_C_AC,
                dim_vector idx_C_BC,
                dim_vector idx_C_ABC)
 {
     const auto nirrep = A.num_irreps();
+    scalar one(1.0, type);
 
     std::array<len_vector,3> len;
     std::array<stride_vector,3> stride;
@@ -425,10 +359,14 @@ void mult_blis(type_t type, const communicator& comm, const cntx_t* cntx,
                  (unit_A_AB == (int)perm_AB.size() &&
                   unit_B_AB == (int)perm_AB.size()));
 
-    bool pack_M_3d = unit_A_AC > 0 && unit_A_AC < (int)perm_AC.size();
-    bool pack_N_3d = unit_B_BC > 0 && unit_B_BC < (int)perm_BC.size();
-    bool pack_K_3d = (unit_A_AB > 0 && unit_A_AB < (int)perm_AB.size()) ||
-                     (unit_B_AB > 0 && unit_B_AB < (int)perm_AB.size());
+    //bool pack_M_3d = unit_A_AC > 0 && unit_A_AC < (int)perm_AC.size();
+    //bool pack_N_3d = unit_B_BC > 0 && unit_B_BC < (int)perm_BC.size();
+    //bool pack_K_3d = (unit_A_AB > 0 && unit_A_AB < (int)perm_AB.size()) ||
+    //                 (unit_B_AB > 0 && unit_B_AB < (int)perm_AB.size());
+
+    bool pack_M_3d = false;
+    bool pack_N_3d = false;
+    bool pack_K_3d = false;
 
     if (pack_M_3d)
     {
@@ -479,7 +417,7 @@ void mult_blis(type_t type, const communicator& comm, const cntx_t* cntx,
                               idx_A_ABC, irreps_ABC, it_ABC.position(),
                                      conj_B, B, idx_B_BC, unit_B_BC, idx_B_AB, unit_B_AB,
                               idx_B_ABC, irreps_ABC, it_ABC.position(),
-                               beta, conj_C, C, idx_C_AC, unit_C_AC, idx_C_BC, unit_C_BC,
+                                             C, idx_C_AC, unit_C_AC, idx_C_BC, unit_C_BC,
                               idx_C_ABC, irreps_ABC, it_ABC.position());
             }
         }
@@ -496,12 +434,14 @@ void mult_block(type_t type, const communicator& comm, const cntx_t* cntx,
                 dim_vector idx_B_AB,
                 dim_vector idx_B_BC,
                 dim_vector idx_B_ABC,
-                const scalar&  beta, bool conj_C, const dpd_marray_view<char>& C,
+                                                  const dpd_marray_view<char>& C,
                 dim_vector idx_C_AC,
                 dim_vector idx_C_BC,
                 dim_vector idx_C_ABC)
 {
     const len_type ts = type_size[type];
+    scalar one(1.0, type);
+
     const auto nirrep = A.num_irreps();
     const auto ndim_A = A.dimension();
     const auto ndim_B = B.dimension();
@@ -577,9 +517,6 @@ void mult_block(type_t type, const communicator& comm, const cntx_t* cntx,
                         auto stride_C_AC = stl_ext::select_from(local_C.strides(), idx_C_AC);
                         auto stride_C_BC = stl_ext::select_from(local_C.strides(), idx_C_BC);
 
-                        auto local_beta = beta;
-                        bool local_conj_C = conj_C;
-
                         if ((ndim_AB != 0 || irrep_AB == 0) &&
                             irrep_ABC == (A.irrep()^B.irrep()^C.irrep()))
                         {
@@ -602,24 +539,10 @@ void mult_block(type_t type, const communicator& comm, const cntx_t* cntx,
                                 auto stride_B_BC = stl_ext::select_from(local_B.strides(), idx_B_BC);
 
                                 mult(type, comm, cntx, len_AB, len_AC, len_BC, len_ABC,
-                                          alpha,       conj_A, A.data() + (local_A.data()-A.data())*ts, stride_A_AB, stride_A_AC, stride_A_ABC,
-                                                       conj_B, B.data() + (local_B.data()-B.data())*ts, stride_B_AB, stride_B_BC, stride_B_ABC,
-                                     local_beta, local_conj_C, C.data() + (local_C.data()-C.data())*ts, stride_C_AC, stride_C_BC, stride_C_ABC);
-
-                                local_beta = 1;
-                                local_conj_C = false;
+                                     alpha, conj_A, A.data() + (local_A.data()-A.data())*ts, stride_A_AB, stride_A_AC, stride_A_ABC,
+                                            conj_B, B.data() + (local_B.data()-B.data())*ts, stride_B_AB, stride_B_BC, stride_B_ABC,
+                                       one,  false, C.data() + (local_C.data()-C.data())*ts, stride_C_AC, stride_C_BC, stride_C_ABC);
                             }
-                        }
-
-                        if (local_beta.is_zero())
-                        {
-                            set(type, comm, cntx, local_C.lengths(),
-                                local_beta, C.data() + (local_C.data()-C.data())*ts, local_C.strides());
-                        }
-                        else if (!local_beta.is_one() || (local_beta.is_complex() && local_conj_C))
-                        {
-                            scale(type, comm, cntx, local_C.lengths(),
-                                  local_beta, local_conj_C, C.data() + (local_C.data()-C.data())*ts, local_C.strides());
                         }
                     }
                 }
@@ -634,24 +557,14 @@ void mult_vec(type_t type, const communicator& comm, const cntx_t* cntx,
               dim_vector idx_A_ABC,
                                    bool conj_B, const dpd_marray_view<char>& B,
               dim_vector idx_B_ABC,
-              const scalar&  beta, bool conj_C, const dpd_marray_view<char>& C,
+                                                const dpd_marray_view<char>& C,
               dim_vector idx_C_ABC)
 {
     if (A.irrep() != B.irrep() || A.irrep() != C.irrep())
-    {
-        if (beta.is_zero())
-        {
-            set(type, comm, cntx, beta, C, idx_C_ABC);
-        }
-        else if (!beta.is_one() || (beta.is_complex() && conj_C))
-        {
-            scale(type, comm, cntx, beta, conj_C, C, idx_C_ABC);
-        }
-
         return;
-    }
 
     const len_type ts = type_size[type];
+    scalar one(1.0, type);
 
     const auto nirrep = A.num_irreps();
 
@@ -686,7 +599,7 @@ void mult_vec(type_t type, const communicator& comm, const cntx_t* cntx,
         mult(type, comm, cntx, {}, {}, {}, len_ABC,
              alpha, conj_A, A.data() + (local_A.data()-A.data())*ts, {}, {}, stride_A_ABC,
                     conj_B, B.data() + (local_B.data()-B.data())*ts, {}, {}, stride_B_ABC,
-              beta, conj_C, C.data() + (local_C.data()-C.data())*ts, {}, {}, stride_C_ABC);
+               one,  false, C.data() + (local_C.data()-C.data())*ts, {}, {}, stride_C_ABC);
     }
 }
 
@@ -698,24 +611,14 @@ void mult_vec(type_t type, const communicator& comm, const cntx_t* cntx,
                                    bool conj_B, const dpd_marray_view<char>& B,
               dim_vector idx_B_AB,
               dim_vector idx_B_ABC,
-              const scalar&  beta, bool conj_C, const dpd_marray_view<char>& C,
+                                                const dpd_marray_view<char>& C,
               dim_vector idx_C_ABC)
 {
     if (A.irrep() != B.irrep())
-    {
-        if (beta.is_zero())
-        {
-            set(type, comm, cntx, beta, C, idx_C_ABC);
-        }
-        else if (!beta.is_one() || (beta.is_complex() && conj_C))
-        {
-            scale(type, comm, cntx, beta, conj_C, C, idx_C_ABC);
-        }
-
         return;
-    }
 
     const len_type ts = type_size[type];
+    scalar one(1.0, type);
 
     const auto nirrep = A.num_irreps();
 
@@ -745,9 +648,6 @@ void mult_vec(type_t type, const communicator& comm, const cntx_t* cntx,
         auto len_ABC = stl_ext::select_from(local_C.lengths(), idx_C_ABC);
         auto stride_C_ABC = stl_ext::select_from(local_C.strides(), idx_C_ABC);
 
-        auto local_beta = beta;
-        bool local_conj_C = conj_C;
-
         while (it_AB.next())
         {
             for (auto i : range(idx_A_AB.size()))
@@ -766,12 +666,9 @@ void mult_vec(type_t type, const communicator& comm, const cntx_t* cntx,
             auto stride_B_AB = stl_ext::select_from(local_B.strides(), idx_B_AB);
 
             mult(type, comm, cntx, len_AB, {}, {}, len_ABC,
-                      alpha,       conj_A, A.data() + (local_A.data()-A.data())*ts, stride_A_AB, {}, stride_A_ABC,
-                                   conj_B, B.data() + (local_B.data()-B.data())*ts, stride_B_AB, {}, stride_B_ABC,
-                 local_beta, local_conj_C, C.data() + (local_C.data()-C.data())*ts, {}, {}, stride_C_ABC);
-
-            local_beta = 1;
-            local_conj_C = false;
+                 alpha, conj_A, A.data() + (local_A.data()-A.data())*ts, stride_A_AB, {}, stride_A_ABC,
+                        conj_B, B.data() + (local_B.data()-B.data())*ts, stride_B_AB, {}, stride_B_ABC,
+                   one,  false, C.data() + (local_C.data()-C.data())*ts, {}, {}, stride_C_ABC);
         }
     }
 }
@@ -783,25 +680,15 @@ void mult_vec(type_t type, const communicator& comm, const cntx_t* cntx,
               dim_vector idx_A_ABC,
                                    bool conj_B, const dpd_marray_view<char>& B,
               dim_vector idx_B_ABC,
-              const scalar& beta,  bool conj_C, const dpd_marray_view<char>& C,
+                                                const dpd_marray_view<char>& C,
               dim_vector idx_C_AC,
               dim_vector idx_C_ABC)
 {
     if (A.irrep() != C.irrep())
-    {
-        if (beta.is_zero())
-        {
-            set(type, comm, cntx, beta, C, idx_C_ABC);
-        }
-        else if (!beta.is_one() || (beta.is_complex() && conj_C))
-        {
-            scale(type, comm, cntx, beta, conj_C, C, idx_C_ABC);
-        }
-
         return;
-    }
 
     const len_type ts = type_size[type];
+    scalar one(1.0, type);
 
     const auto nirrep = A.num_irreps();
 
@@ -848,7 +735,7 @@ void mult_vec(type_t type, const communicator& comm, const cntx_t* cntx,
         mult(type, comm, cntx, {}, len_AC, {}, len_ABC,
              alpha, conj_A, A.data() + (local_A.data()-A.data())*ts, {}, stride_A_AC, stride_A_ABC,
                     conj_B, B.data() + (local_B.data()-B.data())*ts, {}, {}, stride_B_ABC,
-              beta, conj_C, C.data() + (local_C.data()-C.data())*ts, stride_C_AC, {}, stride_C_ABC);
+               one,  false, C.data() + (local_C.data()-C.data())*ts, stride_C_AC, {}, stride_C_ABC);
     }
 }
 
@@ -868,12 +755,21 @@ void mult(type_t type, const communicator& comm, const cntx_t* cntx,
           const dim_vector& idx_C_BC,
           const dim_vector& idx_C_ABC)
 {
+    if (beta.is_zero())
+    {
+        set(type, comm, cntx, beta, C, range(C.dimension()));
+    }
+    else if (!beta.is_one() || (beta.is_complex() && conj_C))
+    {
+        scale(type, comm, cntx, beta, conj_C, C, range(C.dimension()));
+    }
+
     if (dpd_impl == FULL)
     {
         mult_full(type, comm, cntx,
                   alpha, conj_A, A, idx_A_AB, idx_A_AC, idx_A_ABC,
                          conj_B, B, idx_B_AB, idx_B_BC, idx_B_ABC,
-                   beta, conj_C, C, idx_C_AC, idx_C_BC, idx_C_ABC);
+                                 C, idx_C_AC, idx_C_BC, idx_C_ABC);
 
         comm.barrier();
         return;
@@ -883,7 +779,7 @@ void mult(type_t type, const communicator& comm, const cntx_t* cntx,
         mult_block(type, comm, cntx,
                    alpha, conj_A, A, idx_A_AB, idx_A_AC, idx_A_ABC,
                           conj_B, B, idx_B_AB, idx_B_BC, idx_B_ABC,
-                    beta, conj_C, C, idx_C_AC, idx_C_BC, idx_C_ABC);
+                                  C, idx_C_AC, idx_C_BC, idx_C_ABC);
 
         comm.barrier();
         return;
@@ -908,7 +804,7 @@ void mult(type_t type, const communicator& comm, const cntx_t* cntx,
             mult_vec(type, comm, cntx,
                      alpha, conj_A, A, idx_A_ABC,
                             conj_B, B, idx_B_ABC,
-                      beta, conj_C, C, idx_C_ABC);
+                                    C, idx_C_ABC);
         }
         break;
         case HAS_AB:
@@ -916,7 +812,7 @@ void mult(type_t type, const communicator& comm, const cntx_t* cntx,
             mult_vec(type, comm, cntx,
                      alpha, conj_A, A, idx_A_AB, idx_A_ABC,
                             conj_B, B, idx_B_AB, idx_B_ABC,
-                      beta, conj_C, C, idx_C_ABC);
+                                    C, idx_C_ABC);
         }
         break;
         case HAS_AC:
@@ -924,7 +820,7 @@ void mult(type_t type, const communicator& comm, const cntx_t* cntx,
             mult_vec(type, comm, cntx,
                      alpha, conj_A, A, idx_A_AC, idx_A_ABC,
                             conj_B, B, idx_B_ABC,
-                      beta, conj_C, C, idx_C_AC, idx_C_ABC);
+                                    C, idx_C_AC, idx_C_ABC);
         }
         break;
         case HAS_BC:
@@ -932,7 +828,7 @@ void mult(type_t type, const communicator& comm, const cntx_t* cntx,
             mult_vec(type, comm, cntx,
                      alpha, conj_B, B, idx_B_BC, idx_B_ABC,
                             conj_A, A, idx_A_ABC,
-                      beta, conj_C, C, idx_C_BC, idx_C_ABC);
+                                    C, idx_C_BC, idx_C_ABC);
         }
         break;
         case HAS_AC+HAS_BC:
@@ -940,7 +836,7 @@ void mult(type_t type, const communicator& comm, const cntx_t* cntx,
             mult_blis(type, comm, cntx,
                       alpha, conj_A, A, idx_A_AC, idx_A_ABC,
                              conj_B, B, idx_B_BC, idx_B_ABC,
-                       beta, conj_C, C, idx_C_AC, idx_C_BC, idx_C_ABC);
+                                     C, idx_C_AC, idx_C_BC, idx_C_ABC);
         }
         break;
         case HAS_AB+HAS_AC:
@@ -948,7 +844,7 @@ void mult(type_t type, const communicator& comm, const cntx_t* cntx,
             mult_blis(type, comm, cntx,
                       alpha, conj_A, A, idx_A_AB, idx_A_AC, idx_A_ABC,
                              conj_B, B, idx_B_AB, idx_B_ABC,
-                       beta, conj_C, C, idx_C_AC, idx_C_ABC);
+                                     C, idx_C_AC, idx_C_ABC);
         }
         break;
         case HAS_AB+HAS_BC:
@@ -956,7 +852,7 @@ void mult(type_t type, const communicator& comm, const cntx_t* cntx,
             mult_blis(type, comm, cntx,
                       alpha, conj_B, B, idx_B_AB, idx_B_BC, idx_B_ABC,
                              conj_A, A, idx_A_AB, idx_A_ABC,
-                       beta, conj_C, C, idx_C_BC, idx_C_ABC);
+                                     C, idx_C_BC, idx_C_ABC);
         }
         break;
         case HAS_AB+HAS_AC+HAS_BC:
@@ -964,7 +860,7 @@ void mult(type_t type, const communicator& comm, const cntx_t* cntx,
             mult_blis(type, comm, cntx,
                       alpha, conj_A, A, idx_A_AB, idx_A_AC, idx_A_ABC,
                              conj_B, B, idx_B_AB, idx_B_BC, idx_B_ABC,
-                       beta, conj_C, C, idx_C_AC, idx_C_BC, idx_C_ABC);
+                                     C, idx_C_AC, idx_C_BC, idx_C_ABC);
         }
         break;
     }

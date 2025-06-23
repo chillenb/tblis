@@ -40,6 +40,8 @@ void scale(type_t type, const communicator& comm, const cntx_t* cntx,
         for (len_type i = n1_min;i < n1_max;i++)
         {
             iter_A.next(A1);
+            // Use the `scal2v` kernel rather than `scalv` because the `conj` parameter in the latter
+            // only applies to `alpha` and not the elements of `A`.
             scale_ukr(conj_A ? BLIS_CONJUGATE : BLIS_NO_CONJUGATE,
                       n0_max-n0_min, &alpha, A1, stride0, A1, stride0, cntx);
         }

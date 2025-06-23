@@ -46,7 +46,7 @@ void packm_blk_dpd(const obj_t*     c,
     auto  kappa_cast      = static_cast<char*>(bli_packm_scalar(&kappa_local, p));
 
     auto& params          = *static_cast<const dpd_params*>(bli_packm_def_cntl_ukr_params(cntl));
-    auto  packm_ker       = reinterpret_cast<packm_bsmtc_ft>(bli_cntx_get_ukr2_dt(dt_c, dt_p, (ukr_t)PACKM_BSMTC_UKR, cntx));
+    auto  packm_ker       = reinterpret_cast<packm_bsmtc_ft>(bli_cntx_get_ukr2_dt(dt_c, dt_p, PACKM_BSMTC_UKR, cntx));
 
     // Compute the total number of iterations we'll need.
     len_type n_iter, n_patch0, n_patch_off0;

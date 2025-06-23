@@ -63,3 +63,5 @@ download/blis/test
 download/blis/testsuite
 download/blis/travis
 download/blis/vendor
+download/blis
+compile_flags.txt

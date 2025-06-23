@@ -88,7 +88,6 @@ REPLICATED_TEMPLATED_TEST_CASE(indexed_trace, R, T, all_types)
     auto neps = prod(A.lengths())*A.num_indices();
 
     T scale(10.0*random_unit<T>());
-    scale = 1.0;
 
     dpd_impl = dpd_impl_t::FULL;
     C.reset(B);

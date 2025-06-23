@@ -72,7 +72,7 @@ void add(type_t type, const communicator& comm, const cntx_t* cntx,
     for (auto i : stride_A_AB_) stride_A_AB.push_back(i*ts);
     for (auto i : stride_B_AB_) stride_B_AB.push_back(i*ts);
 
-    auto reduce_ukr = reinterpret_cast<reduce_ft>(bli_cntx_get_ukr_dt((num_t)type, (ukr_t)REDUCE_KER, cntx));
+    auto reduce_ukr = reinterpret_cast<reduce_ft>(bli_cntx_get_ukr_dt((num_t)type, REDUCE_KER, cntx));
 
     comm.distribute_over_threads(n_AB,
     [&](len_type n_min, len_type n_max)
@@ -123,7 +123,7 @@ void add(type_t type, const communicator& comm, const cntx_t* cntx,
     for (auto i : stride_A_AB_) stride_A_AB.push_back(i*ts);
     for (auto i : stride_B_AB_) stride_B_AB.push_back(i*ts);
 
-    auto shift_ukr = reinterpret_cast<shift_ft>(bli_cntx_get_ukr_dt((num_t)type, (ukr_t)SHIFT_KER, cntx));
+    auto shift_ukr = reinterpret_cast<shift_ft>(bli_cntx_get_ukr_dt((num_t)type, SHIFT_KER, cntx));
 
     comm.distribute_over_threads(n_AB,
     [&](len_type n_min, len_type n_max)
@@ -232,7 +232,7 @@ void add(type_t type, const communicator& comm, const cntx_t* cntx,
         unsigned nt_mn1, nt_mn;
         std::tie(nt_mn1, nt_mn) = partition_2x2(comm.num_threads(), mn1, m0*n0);
 
-        auto trans_ukr = reinterpret_cast<trans_ft>(bli_cntx_get_ukr_dt((num_t)type, (ukr_t)TRANS_KER, cntx));
+        auto trans_ukr = reinterpret_cast<trans_ft>(bli_cntx_get_ukr_dt((num_t)type, TRANS_KER, cntx));
 
         auto subcomm = comm.gang(TCI_EVENLY, nt_mn1);
 

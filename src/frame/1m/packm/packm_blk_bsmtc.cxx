@@ -63,7 +63,7 @@ void packm_blk_bsmtc(const obj_t*     c,
     auto  kappa_cast    = static_cast<char*>(bli_packm_scalar(&kappa_local, p));
 
     auto  params        = static_cast<const bsmtc_params*>(bli_packm_def_cntl_ukr_params(cntl));
-    auto  packm_ker     = reinterpret_cast<packm_bsmtc_ft>(bli_cntx_get_ukr2_dt(dt_c, dt_p, (ukr_t)PACKM_BSMTC_UKR, cntx));
+    auto  packm_ker     = reinterpret_cast<packm_bsmtc_ft>(bli_cntx_get_ukr2_dt(dt_c, dt_p, PACKM_BSMTC_UKR, cntx));
 
     auto  rscat_c       = convert_and_align<inc_t>(p_cast + panel_size);
     auto  cscat_c       = rscat_c + n_iter*panel_dim_max;
@@ -78,6 +78,10 @@ void packm_blk_bsmtc(const obj_t*     c,
     dim_t m_start, m_end, m_inc;
     bli_thread_range_sl(tid, nt, n_iter, 1, FALSE, &m_start, &m_end, &m_inc);
 
+    dim_t k_start, k_end, k_inc;
+    bli_thread_range_sl(tid, nt, k_blocks, 1, FALSE, &k_start, &k_end, &k_inc);
+
+    if (m_start < n_iter)
     fill_block_scatter(dt_c_size,
                        params->nblock[0],
                        params->block_off[0],
@@ -91,9 +95,7 @@ void packm_blk_bsmtc(const obj_t*     c,
                        rbs_c + m_start,
                        params->pack_3d[0]);
 
-    dim_t k_start, k_end, k_inc;
-    bli_thread_range_sl(tid, nt, k_blocks, 1, FALSE, &k_start, &k_end, &k_inc);
-
+    if (k_start < k_blocks)
     fill_block_scatter(dt_c_size,
                        params->nblock[1],
                        params->block_off[1],

@@ -28,7 +28,7 @@ void reduce(type_t type, const communicator& comm, const cntx_t* cntx, reduce_t 
 
     atomic_reducer local_result(op);
 
-    auto reduce_ukr = reinterpret_cast<reduce_ft>(bli_cntx_get_ukr_dt((num_t)type, (ukr_t)REDUCE_KER, cntx));
+    auto reduce_ukr = reinterpret_cast<reduce_ft>(bli_cntx_get_ukr_dt((num_t)type, REDUCE_KER, cntx));
 
     comm.distribute_over_threads(n0, n1,
     [&](len_type n0_min, len_type n0_max, len_type n1_min, len_type n1_max)

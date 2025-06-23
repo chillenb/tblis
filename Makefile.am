@@ -200,7 +200,11 @@ if BUILD_BLIS
 PLUGIN_MAKEFILE_DEPS += $(BLIS_ARCHIVE)
 endif
 
-$(BLIS_ARCHIVE):
+if BUILD_BLIS
+BLIS_DEPS := $(shell find download/blis -name '*.c' -o -name '*.h')
+endif
+
+$(BLIS_ARCHIVE): $(BLIS_DEPS)
 	@mkdir -p download/blis/installed
 	$(MAKE) -C download/blis install
 
@@ -216,6 +220,8 @@ $(PLUGIN_ARCHIVE): src/plugin/Makefile
 
 if BUILD_BLIS
 $(BLIS_H): $(BLIS_ARCHIVE)
+EXTRA_lib_libtblis_la_DEPENDENCIES += $(BLIS_ARCHIVE)
+EXTRA_bin_test_DEPENDENCIES += $(BLIS_ARCHIVE)
 endif
 
 $(lib_libtblis_la_OBJECTS) $(bin_test_OBJECTS): $(BLIS_H)

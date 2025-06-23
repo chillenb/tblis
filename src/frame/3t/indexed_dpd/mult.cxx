@@ -329,13 +329,14 @@ void mult_block_fuse_AB(type_t type, const communicator& comm, const cntx_t* cnt
                                         scalar alpha(dcomplex(std::get<0>(scat_AB[i]),
                                                               std::get<1>(scat_AB[i])), type);
 
+                                        auto empty = make_span<stride_type>();
                                         gemm_bsmtc_blis(type, subcomm, cntx,
-                                                                       1, len_AC.size(), len_AC.data(), false,
-                                                                       1, len_BC.size(), len_BC.data(), false,
-                                                        scat_A_AB.size(), len_AB.size(), len_AB.data(), false,
-                                                        alpha, conj_A, data_A, nullptr, scat_A_AB.data(), stride_A_AC.data(), stride_A_AB.data(),
-                                                               conj_B, data_B, nullptr, scat_B_AB.data(), stride_B_BC.data(), stride_B_AB.data(),
-                                                          one,  false, data_C, nullptr,          nullptr, stride_C_AC.data(), stride_C_BC.data());
+                                                        make_span(len_AC), false,
+                                                        make_span(len_BC), false,
+                                                        make_span(len_AB), false,
+                                                        alpha, conj_A, data_A, empty, make_span(scat_A_AB), make_span(stride_A_AC), make_span(stride_A_AB),
+                                                               conj_B, data_B, empty, make_span(scat_B_AB), make_span(stride_B_BC), make_span(stride_B_AB),
+                                                          one,  false, data_C, empty,                empty, make_span(stride_C_AC), make_span(stride_C_BC));
 
                                         scat_A_AB.clear();
                                         scat_B_AB.clear();
@@ -562,13 +563,14 @@ void mult_block_fuse_BC(type_t type, const communicator& comm, const cntx_t* cnt
                                         scalar alpha(dcomplex(std::get<0>(scat_BC[i]),
                                                               std::get<1>(scat_BC[i])), type);
 
+                                        auto empty = make_span<stride_type>();
                                         gemm_bsmtc_blis(type, subcomm, cntx,
-                                                                       1, len_AC.size(), len_AC.data(), false,
-                                                        scat_B_BC.size(), len_BC.size(), len_BC.data(), false,
-                                                                       1, len_AB.size(), len_AB.data(), false,
-                                                        alpha, conj_A, data_A,          nullptr,          nullptr, stride_A_AC.data(), stride_A_AB.data(),
-                                                               conj_B, data_B, scat_B_BC.data(),          nullptr, stride_B_BC.data(), stride_B_AB.data(),
-                                                          one,  false, data_C,          nullptr, scat_C_BC.data(), stride_C_AC.data(), stride_C_BC.data());
+                                                        make_span(len_AC), false,
+                                                        make_span(len_BC), false,
+                                                        make_span(len_AB), false,
+                                                        alpha, conj_A, data_A,                empty,                empty, make_span(stride_A_AC), make_span(stride_A_AB),
+                                                               conj_B, data_B, make_span(scat_B_BC),                empty, make_span(stride_B_BC), make_span(stride_B_AB),
+                                                          one,  false, data_C,                empty, make_span(scat_C_BC), make_span(stride_C_AC), make_span(stride_C_BC));
 
                                         scat_B_BC.clear();
                                         scat_C_BC.clear();
@@ -832,13 +834,14 @@ void mult_block_fuse_AB_BC(type_t type, const communicator& comm, const cntx_t* 
                                                                   std::get<1>(scat_BC[j])), type);
                                             alpha *= alpha_;
 
+                                            auto empty = make_span<stride_type>();
                                             gemm_bsmtc_blis(type, subcomm, cntx,
-                                                                           1, len_AC.size(), len_AC.data(), false,
-                                                            scat_B_BC.size(), len_BC.size(), len_BC.data(), false,
-                                                            scat_B_AB.size(), len_AB.size(), len_AB.data(), false,
-                                                            alpha, conj_A, data_A,          nullptr, scat_A_AB.data(), stride_A_AC.data(), stride_A_AB.data(),
-                                                                   conj_B, data_B, scat_B_BC.data(), scat_B_AB.data(), stride_B_BC.data(), stride_B_AB.data(),
-                                                              one,  false, data_C,          nullptr, scat_C_BC.data(), stride_C_AC.data(), stride_C_BC.data());
+                                                            make_span(len_AC), false,
+                                                            make_span(len_BC), false,
+                                                            make_span(len_AB), false,
+                                                            alpha, conj_A, data_A,                empty, make_span(scat_A_AB), make_span(stride_A_AC), make_span(stride_A_AB),
+                                                                   conj_B, data_B, make_span(scat_B_BC), make_span(scat_B_AB), make_span(stride_B_BC), make_span(stride_B_AB),
+                                                              one,  false, data_C,                empty, make_span(scat_C_BC), make_span(stride_C_AC), make_span(stride_C_BC));
 
                                             scat_B_BC.clear();
                                             scat_C_BC.clear();
@@ -989,10 +992,14 @@ void mult_block(type_t type, const communicator& comm, const cntx_t* cntx,
     auto nidx_B = indices_B.size();
     auto nidx_C = indices_C.size();
 
-    auto pack_M_3d = group_AC.unit_dim[1] > 0 && group_AC.unit_dim[1] < group_AC.dense_ndim;
-    auto pack_N_3d = group_BC.unit_dim[1] > 0 && group_BC.unit_dim[1] < group_BC.dense_ndim;
-    auto pack_K_3d = (group_AB.unit_dim[0] > 0 && group_AB.unit_dim[0] < group_AB.dense_ndim) ||
-                     (group_AB.unit_dim[1] > 0 && group_AB.unit_dim[1] < group_AB.dense_ndim);
+    //auto pack_M_3d = group_AC.unit_dim[1] > 0 && group_AC.unit_dim[1] < group_AC.dense_ndim;
+    //auto pack_N_3d = group_BC.unit_dim[1] > 0 && group_BC.unit_dim[1] < group_BC.dense_ndim;
+    //auto pack_K_3d = (group_AB.unit_dim[0] > 0 && group_AB.unit_dim[0] < group_AB.dense_ndim) ||
+    //                 (group_AB.unit_dim[1] > 0 && group_AB.unit_dim[1] < group_AB.dense_ndim);
+
+    auto pack_M_3d = false;
+    auto pack_N_3d = false;
+    auto pack_K_3d = false;
 
     auto mixed_dim_A = stl_ext::appended(group_AC.mixed_idx[1],
                                          group_AB.mixed_idx[0]);
@@ -1086,7 +1093,7 @@ void mult_block(type_t type, const communicator& comm, const cntx_t* cntx,
                                           group_BC.dense_idx[1], group_BC.unit_dim[1],
                                           group_AB.dense_idx[1], group_AB.unit_dim[1],
                                           mixed_dim_B, mixed_irrep_B, mixed_idx_B,
-                                            one,   false, dpd_C,
+                                                          dpd_C,
                                           group_AC.dense_idx[0], group_AC.unit_dim[0],
                                           group_BC.dense_idx[0], group_BC.unit_dim[0],
                                           mixed_dim_C, mixed_irrep_C, mixed_idx_C);

@@ -68,6 +68,9 @@ REPLICATED_TEMPLATED_TEST_CASE(dpd_replicate, R, T, all_types)
 
     T scale(10.0*random_unit<T>());
 
+    //scale = 1;
+    C.operator=(0);
+
     dpd_impl = dpd_impl_t::FULL;
     C.reset(B);
     add<T>(scale, A, idx_A, scale, C, idx_B);

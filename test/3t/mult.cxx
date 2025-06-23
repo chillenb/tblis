@@ -146,11 +146,8 @@ REPLICATED_TEMPLATED_TEST_CASE(indexed_mult, R, T, all_types)
     label_vector idx_A, idx_B, idx_C;
 
     T scale(10.0*random_unit<T>());
-    scale = 1;
 
     random_mult(N, A, idx_A, B, idx_B, C, idx_C);
-
-    C = 0;
 
     INDEXED_TENSOR_INFO(A);
     INDEXED_TENSOR_INFO(B);
@@ -181,10 +178,8 @@ REPLICATED_TEMPLATED_TEST_CASE(indexed_dpd_mult, R, T, all_types)
     label_vector idx_A, idx_B, idx_C;
 
     T scale(10.0*random_unit<T>());
-    scale = 1;
 
     random_mult(N, A, idx_A, B, idx_B, C, idx_C);
-    C = 0;
 
     INDEXED_DPD_TENSOR_INFO(A);
     INDEXED_DPD_TENSOR_INFO(B);
