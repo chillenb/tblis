@@ -3934,6 +3934,25 @@ fi
 
 
 
+VERSION_MAJOR=${PACKAGE_VERSION%%.*}
+VERSION_MINOR=${PACKAGE_VERSION#*.}
+VERSION_PATCH=${VERSION_MINOR#*.}
+if test "x$VERSION_PATCH" = x"$VERSION_MINOR"; then
+    VERSION_PATCH=0
+else
+    VERSION_MINOR=${VERSION_MINOR%%.*}
+fi
+
+
+printf "%s\n" "#define VERSION_MAJOR $VERSION_MAJOR" >>confdefs.h
+
+
+printf "%s\n" "#define VERSION_MINOR $VERSION_MINOR" >>confdefs.h
+
+
+printf "%s\n" "#define VERSION_PATCH $VERSION_PATCH" >>confdefs.h
+
+
 
 
 ac_config_headers="$ac_config_headers config.h"
