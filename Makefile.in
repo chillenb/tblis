@@ -1975,8 +1975,9 @@ src/plugin/Makefile: $(PLUGIN_MAKEFILE_DEPS)
 	@mkdir -p src/plugin
 	@cd src/plugin && \
 		$(BLIS_PREFIX)/share/blis/configure-plugin \
-			CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS) $(INCLUDE_PATHS) -I$(srcdir)/src -I.. -I../external/tci/tci -I$(srcdir)/src/external/tci" \
-			-f --build --path=$(srcdir)/src/plugin tblis
+			CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS) $(INCLUDE_PATHS) -I$(abs_srcdir)/src -I.. \
+				-I$(abs_builddir)/src/external/tci/tci -I$(abs_srcdir)/src/external/tci" \
+				-f --build --path=$(abs_srcdir)/src/plugin tblis
 
 $(PLUGIN_ARCHIVE): src/plugin/Makefile
 	$(MAKE) -C src/plugin
