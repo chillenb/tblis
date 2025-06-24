@@ -7402,7 +7402,7 @@ ac_cv_search_libs_blis=no
 BUILD_BLIS=no
 
 PKG_CONFIG_PATH_save="$PKG_CONFIG_PATH"
-PKG_CONFIG_PATH="$blis_dir/share/pkgconfig $PKG_CONFIG_PATH"
+PKG_CONFIG_PATH="$blis_dir/share/pkgconfig:$PKG_CONFIG_PATH"
 
 
 
@@ -7541,19 +7541,19 @@ if test -z "$PKG_CONFIG"; then
 fi
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for blis" >&5
-printf %s "checking for blis... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for blis >= 2" >&5
+printf %s "checking for blis >= 2... " >&6; }
 
 if test -n "$BLIS_CFLAGS"; then
     pkg_cv_BLIS_CFLAGS="$BLIS_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"blis\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "blis") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"blis >= 2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "blis >= 2") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_BLIS_CFLAGS=`$PKG_CONFIG --cflags "blis" 2>/dev/null`
+  pkg_cv_BLIS_CFLAGS=`$PKG_CONFIG --cflags "blis >= 2" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -7565,12 +7565,12 @@ if test -n "$BLIS_LIBS"; then
     pkg_cv_BLIS_LIBS="$BLIS_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"blis\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "blis") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"blis >= 2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "blis >= 2") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_BLIS_LIBS=`$PKG_CONFIG --libs "blis" 2>/dev/null`
+  pkg_cv_BLIS_LIBS=`$PKG_CONFIG --libs "blis >= 2" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -7591,9 +7591,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-                BLIS_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "blis" 2>&1`
+                BLIS_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "blis >= 2" 2>&1`
         else
-                BLIS_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "blis" 2>&1`
+                BLIS_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "blis >= 2" 2>&1`
         fi
         # Put the nasty error message in config.log where it belongs
         echo "$BLIS_PKG_ERRORS" >&5
@@ -7656,8 +7656,8 @@ printf "%s\n" "not found" >&6; }
 
         blis_dir=download
     else
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $BLIS_PREFIX" >&5
-printf "%s\n" "$BLIS_PREFIX" >&6; }
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: in $BLIS_PREFIX" >&5
+printf "%s\n" "in $BLIS_PREFIX" >&6; }
         blis_dir="$BLIS_PREFIX"
     fi
 fi

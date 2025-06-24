@@ -181,9 +181,9 @@ ac_cv_search_libs_blis=no
 BUILD_BLIS=no
 
 PKG_CONFIG_PATH_save="$PKG_CONFIG_PATH"
-PKG_CONFIG_PATH="$blis_dir/share/pkgconfig $PKG_CONFIG_PATH"
+PKG_CONFIG_PATH="$blis_dir/share/pkgconfig:$PKG_CONFIG_PATH"
 
-PKG_CHECK_MODULES([BLIS], [blis], [
+PKG_CHECK_MODULES([BLIS], [blis >= 2], [
     PKG_CHECK_VAR([BLIS_PREFIX], [blis], [prefix])
 ], [
     BLIS_PREFIX=none
@@ -203,7 +203,7 @@ if test "x$blis_dir" != "xdownload"; then
 
         blis_dir=download
     else
-        AC_MSG_RESULT([$BLIS_PREFIX])
+        AC_MSG_RESULT([in $BLIS_PREFIX])
         blis_dir="$BLIS_PREFIX"
     fi
 fi
