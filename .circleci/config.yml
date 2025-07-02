@@ -122,7 +122,9 @@ jobs:
             echo "RUN_TESTS         = $RUN_TESTS"
             echo "TEST_INSTALL      = $TEST_INSTALL"
 
-            $DIST_PATH/configure --prefix=$DIST_PATH/install --enable-threading=$THREADING CC=$CC CXX=$CXX --with-blis-confname=$CONF
+            CONFIGURE="$DIST_PATH/configure --prefix=$DIST_PATH/install --enable-threading=$THREADING CC=$CC CXX=$CXX --with-blis-confname=$BUILD_CONFIG"
+            echo "Running $CONFIGURE"
+            $CONFIGURE
             pwd
             ls -l
             $CC --version

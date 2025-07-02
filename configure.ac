@@ -256,5 +256,7 @@ AC_OUTPUT
 TBLIS_CONFIG_SUBDIR([tblis/external/tci])
 
 if test "x$BUILD_BLIS" = "xyes"; then
-    ( cd download/blis && ./configure -tomp,pthreads -p "$BLIS_PREFIX" --disable-blas --disable-cblas --enable-static --disable-shared "$blis_confname" )
+    CONFIGURE="./configure -tomp,pthreads -p \"$BLIS_PREFIX\" --disable-blas --disable-cblas --enable-static --disable-shared $blis_confname"
+    echo "Running $CONFIGURE"
+    ( cd download/blis && $CONFIGURE )
 fi

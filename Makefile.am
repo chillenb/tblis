@@ -212,18 +212,18 @@ VPATH += $(srcdir)
 
 SUBDIRS = tblis/external/tci
 ACLOCAL_AMFLAGS = -I m4
-AM_CPPFLAGS = -I$(srcdir) \
-              -I$(srcdir)/tblis \
-              -I$(srcdir)/tblis/external \
-              -I$(srcdir)/tblis/external/tci \
-              -I$(srcdir)/tblis/external/stl_ext \
-              -I$(srcdir)/tblis/external/marray \
-              -I$(srcdir)/tblis/external/catch \
-              -I$(builddir) \
-              -I$(builddir)/tblis \
-              -I$(builddir)/tblis/util \
-              -I$(builddir)/tblis/external/tci/tci \
-              -I$(BLIS_PREFIX)/include
+INCLUDE_PATHS = -I$(abs_srcdir) \
+                -I$(abs_srcdir)/tblis \
+                -I$(abs_srcdir)/tblis/external \
+                -I$(abs_srcdir)/tblis/external/tci \
+                -I$(abs_srcdir)/tblis/external/stl_ext \
+                -I$(abs_srcdir)/tblis/external/marray \
+                -I$(abs_srcdir)/tblis/external/catch \
+                -I$(abs_builddir) \
+                -I$(abs_builddir)/tblis \
+                -I$(abs_builddir)/tblis/util \
+                -I$(abs_builddir)/tblis/external/tci/tci
+AM_CPPFLAGS = $(INCLUDE_PATHS) -I$(BLIS_PREFIX)/include
 AM_LDFLAGS = -pthread -L$(BLIS_PREFIX)/lib
 bin_test_LDADD = lib/libtblis.la
 
@@ -244,8 +244,7 @@ tblis/plugin/Makefile: $(PLUGIN_MAKEFILE_DEPS)
 	@mkdir -p tblis/plugin
 	@cd tblis/plugin && \
 		$(BLIS_PREFIX)/share/blis/configure-plugin \
-			CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS) $(INCLUDE_PATHS) -I$(abs_srcdir)/tblis -I.. \
-				-I$(abs_builddir)/tblis/external/tci/tci -I$(abs_srcdir)/tblis/external/tci" \
+			CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS) $(INCLUDE_PATHS)" \
 				-f --build --path=$(abs_srcdir)/tblis/plugin tblis
 
 $(PLUGIN_ARCHIVE): tblis/plugin/Makefile
