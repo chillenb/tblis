@@ -97,13 +97,12 @@ jobs:
           name: Configuring, Building, Testing
           command: |
             export DIST_PATH=.
-            export TEST_INSTALL="<< parameters.TEST_INSTALL >>"
             export CC="<< parameters.CC >>"
             export OOT="<< parameters.OOT >>"
-            export RUN_TEST="<< parameters.RUN_TEST >>"
             export BUILD_CONFIG="<< parameters.BUILD_CONFIG >>"
             export THREADING="<< parameters.THREADING >>"
-            export TESTSUITE_WRAPPER="<< parameters.TESTSUITE_WRAPPER >>"
+            export RUN_TESTS="<< parameters.RUN_TESTS >>"
+            export TEST_INSTALL="<< parameters.TEST_INSTALL >>"
 
             case $CC in
                 gcc) export CXX=g++;;
