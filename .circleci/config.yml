@@ -1,0 +1,140 @@
+version: 2.1
+
+branches:
+  only:
+    - master
+    - develop
+    - /[0-9]+.x/
+
+executors:
+  linux: # Docker using the Base Convenience Image
+    docker:
+      - image: cimg/base:2024.10
+  linuxnew: # Docker using the Base Convenience Image
+    docker:
+      - image: cimg/base:current-22.04
+  macos: &macos-executor # macos executor running Xcode
+    macos:
+      xcode: 14.2.0
+  linuxvm: # executor type
+    machine:
+      image: ubuntu-2204:current
+
+workflows:
+  build:
+    jobs:
+      # Default:
+      # - build:
+      #     TEST_INSTALL: 1
+      #     OS: linux
+      #     CC: gcc
+      #     OOT: 0
+      #     RUN_TEST: 1
+      #     THREADING: none
+      #     BUILD_CONFIG: auto
+      #     PACKAGES: ''
+
+      - build:
+          OOT: 1
+          THREADING: openmp
+      - build:
+          CC: clang
+          THREADING: openmp
+      - build:
+          OS: macos
+          CC: clang
+          THREADING: dispatch
+      - build:
+          THREADING: pthread
+      - build:
+          THREADING: tbb
+          PACKAGES: 'libtbb-dev'
+      - build:
+          THREADING: none
+
+jobs:
+  build:
+    parameters:
+      OS:
+        type: executor
+        default: linux
+      CC:
+        type: string
+        default: gcc
+      OOT:
+        type: integer
+        default: 0
+      RUN_TESTS:
+        type: integer
+        default: 1
+      TEST_INSTALL:
+        type: integer
+        default: 1
+      THREADING:
+        type: string
+        default: none
+      BUILD_CONFIG:
+        type: string
+        default: auto
+      PACKAGES:
+        type: string
+        default: ''
+    executor: << parameters.OS >>
+    steps:
+      - checkout
+
+      - when:
+          condition:
+            not:
+              equal: [ *macos-executor, << parameters.OS >> ]
+          steps:
+            - run:
+                name: Installing Dependencies
+                command:
+                  sudo apt-get update && sudo NEEDRESTART_MODE=a apt-get install -y make python3 << parameters.PACKAGES >>
+
+      - run:
+          name: Configuring, Building, Testing
+          command: |
+            export DIST_PATH=.
+            export TEST_INSTALL="<< parameters.TEST_INSTALL >>"
+            export CC="<< parameters.CC >>"
+            export OOT="<< parameters.OOT >>"
+            export RUN_TEST="<< parameters.RUN_TEST >>"
+            export BUILD_CONFIG="<< parameters.BUILD_CONFIG >>"
+            export THREADING="<< parameters.THREADING >>"
+            export TESTSUITE_WRAPPER="<< parameters.TESTSUITE_WRAPPER >>"
+
+            case $CC in
+                gcc) export CXX=g++;;
+                clang) export CXX=clang++;;
+            esac
+
+            pwd
+            if [ $OOT -eq 1 ]; then export DIST_PATH=`pwd`; mkdir ../oot; cd ../oot; chmod -R a-w $DIST_PATH; fi
+            pwd
+
+            echo "Configuration:"
+            echo "CC                = $CC"
+            echo "CXX               = $CXX"
+            echo "OOT               = $OOT"
+            echo "BUILD_CONFIG      = $BUILD_CONFIG"
+            echo "THREADING         = $THREADING"
+            echo "RUN_TESTS         = $RUN_TESTS"
+            echo "TEST_INSTALL      = $TEST_INSTALL"
+
+            $DIST_PATH/configure --prefix=$DIST_PATH/install --enable-threading=$THREADING CC=$CC CXX=$CXX --with-blis-confname=$CONF
+            pwd
+            ls -l
+            $CC --version
+            $CC -v
+
+            make V=1 -j2
+            make install
+
+            export OMP_NUM_THREADS=2
+            bin/test
+
+            if [ $TEST_INSTALL -eq 1 ]; then
+                $CXX -o test_install $DIST_PATH/test/test_install.cxx -I$DIST_PATH/install/include -I$DIST_PATH/install/lib -ltblis
+            fi

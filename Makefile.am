@@ -6,156 +6,177 @@ endif
 SOURCE_SUFFIXES = .c .h .cxx .cpp .hpp .cc .hh .C
 BLIS_H = $(BLIS_PREFIX)/include/blis/blis.h
 BLIS_ARCHIVE = download/blis/lib/$(CONFIG_NAME)/libblis.a
-PLUGIN_ARCHIVE = src/plugin/lib/$(CONFIG_NAME)/libblis_tblis.a
-PLUGIN_SOURCE = $(foreach suf,$(SOURCE_SUFFIXES),$(shell find $(srcdir)/src/plugin -name \*$(suf)))
+PLUGIN_ARCHIVE = tblis/plugin/lib/$(CONFIG_NAME)/libblis_tblis.a
+PLUGIN_SOURCE = $(foreach suf,$(SOURCE_SUFFIXES),$(shell find $(srcdir)/tblis/plugin -name \*$(suf)))
 
 lib_LTLIBRARIES = lib/libtblis.la
 EXTRA_lib_libtblis_la_DEPENDENCIES = $(PLUGIN_ARCHIVE)
 lib_libtblis_la_SOURCES = \
     \
-    src/frame/0/add.cxx \
-    src/frame/0/mult.cxx \
-    src/frame/0/reduce.cxx \
+    tblis/frame/0/add.cxx \
+    tblis/frame/0/mult.cxx \
+    tblis/frame/0/reduce.cxx \
     \
-    src/frame/1m/packm/packm_blk_bsmtc.cxx \
-    src/frame/1m/packm/packm_blk_dpd.cxx \
+    tblis/frame/1m/packm/packm_blk_bsmtc.cxx \
+    tblis/frame/1m/packm/packm_blk_dpd.cxx \
     \
-    src/frame/1t/dense/add.cxx \
-    src/frame/1t/dense/dot.cxx \
-    src/frame/1t/dense/reduce.cxx \
-    src/frame/1t/dense/scale.cxx \
-    src/frame/1t/dense/set.cxx \
-    src/frame/1t/dense/shift.cxx \
+    tblis/frame/1t/dense/add.cxx \
+    tblis/frame/1t/dense/dot.cxx \
+    tblis/frame/1t/dense/reduce.cxx \
+    tblis/frame/1t/dense/scale.cxx \
+    tblis/frame/1t/dense/set.cxx \
+    tblis/frame/1t/dense/shift.cxx \
     \
-    src/frame/1t/dpd/add.cxx \
-    src/frame/1t/dpd/dot.cxx \
-    src/frame/1t/dpd/reduce.cxx \
-    src/frame/1t/dpd/scale.cxx \
-    src/frame/1t/dpd/set.cxx \
-    src/frame/1t/dpd/shift.cxx \
+    tblis/frame/1t/dpd/add.cxx \
+    tblis/frame/1t/dpd/dot.cxx \
+    tblis/frame/1t/dpd/reduce.cxx \
+    tblis/frame/1t/dpd/scale.cxx \
+    tblis/frame/1t/dpd/set.cxx \
+    tblis/frame/1t/dpd/shift.cxx \
     \
-    src/frame/1t/indexed/add.cxx \
-    src/frame/1t/indexed/dot.cxx \
-    src/frame/1t/indexed/reduce.cxx \
-    src/frame/1t/indexed/scale.cxx \
-    src/frame/1t/indexed/set.cxx \
-    src/frame/1t/indexed/shift.cxx \
+    tblis/frame/1t/indexed/add.cxx \
+    tblis/frame/1t/indexed/dot.cxx \
+    tblis/frame/1t/indexed/reduce.cxx \
+    tblis/frame/1t/indexed/scale.cxx \
+    tblis/frame/1t/indexed/set.cxx \
+    tblis/frame/1t/indexed/shift.cxx \
     \
-    src/frame/1t/indexed_dpd/add.cxx \
-    src/frame/1t/indexed_dpd/dot.cxx \
-    src/frame/1t/indexed_dpd/reduce.cxx \
-    src/frame/1t/indexed_dpd/scale.cxx \
-    src/frame/1t/indexed_dpd/set.cxx \
-    src/frame/1t/indexed_dpd/shift.cxx \
+    tblis/frame/1t/indexed_dpd/add.cxx \
+    tblis/frame/1t/indexed_dpd/dot.cxx \
+    tblis/frame/1t/indexed_dpd/reduce.cxx \
+    tblis/frame/1t/indexed_dpd/scale.cxx \
+    tblis/frame/1t/indexed_dpd/set.cxx \
+    tblis/frame/1t/indexed_dpd/shift.cxx \
     \
-    src/frame/1t/add.cxx \
-    src/frame/1t/dot.cxx \
-    src/frame/1t/reduce.cxx \
-    src/frame/1t/scale.cxx \
-    src/frame/1t/set.cxx \
-    src/frame/1t/shift.cxx \
+    tblis/frame/1t/add.cxx \
+    tblis/frame/1t/dot.cxx \
+    tblis/frame/1t/reduce.cxx \
+    tblis/frame/1t/scale.cxx \
+    tblis/frame/1t/set.cxx \
+    tblis/frame/1t/shift.cxx \
     \
-    src/frame/3m/gemm/gemm_ker_bsmtc.cxx \
-    src/frame/3m/gemm/gemm_ker_dpd.cxx \
+    tblis/frame/3m/gemm/gemm_ker_bsmtc.cxx \
+    tblis/frame/3m/gemm/gemm_ker_dpd.cxx \
     \
-    src/frame/3t/dense/mult.cxx \
+    tblis/frame/3t/dense/mult.cxx \
     \
-    src/frame/3t/dpd/mult.cxx \
+    tblis/frame/3t/dpd/mult.cxx \
     \
-    src/frame/3t/indexed/mult.cxx \
+    tblis/frame/3t/indexed/mult.cxx \
     \
-    src/frame/3t/indexed_dpd/mult.cxx \
+    tblis/frame/3t/indexed_dpd/mult.cxx \
     \
-    src/frame/3t/mult.cxx \
+    tblis/frame/3t/mult.cxx \
     \
-    src/frame/base/basic_types.cxx \
-    src/frame/base/block_scatter.cxx \
-    src/frame/base/dpd_block_scatter.cxx \
-    src/frame/base/env.cxx \
-    src/frame/base/tensor.cxx \
-    src/frame/base/thread.cxx
+    tblis/frame/base/basic_types.cxx \
+    tblis/frame/base/block_scatter.cxx \
+    tblis/frame/base/dpd_block_scatter.cxx \
+    tblis/frame/base/env.cxx \
+    tblis/frame/base/tensor.cxx \
+    tblis/frame/base/thread.cxx
 
-pkginclude_HEADERS = src/tblis.h src/tblis_config.h
+include_HEADERS = tblis.h
+pkginclude_HEADERS = tblis/tblis.h tblis/tblis_config.h
 
 baseincludedir = $(pkgincludedir)/frame/base
 baseinclude_HEADERS = \
     \
-    src/frame/base/aligned_allocator.hpp \
-    src/frame/base/alignment.hpp \
-    src/frame/base/basic_types.h \
-    src/frame/base/thread.h
+    tblis/frame/base/aligned_allocator.hpp \
+    tblis/frame/base/alignment.hpp \
+    tblis/frame/base/basic_types.h \
+    tblis/frame/base/thread.h
 
 frame1tincludedir = $(pkgincludedir)/frame/1t
 frame1tinclude_HEADERS = \
     \
-    src/frame/1t/add.h \
-    src/frame/1t/dot.h \
-    src/frame/1t/reduce.h \
-    src/frame/1t/scale.h \
-    src/frame/1t/set.h \
-    src/frame/1t/shift.h
+    tblis/frame/1t/add.h \
+    tblis/frame/1t/dot.h \
+    tblis/frame/1t/reduce.h \
+    tblis/frame/1t/scale.h \
+    tblis/frame/1t/set.h \
+    tblis/frame/1t/shift.h
 
 frame3tincludedir = $(pkgincludedir)/frame/3t
 frame3tinclude_HEADERS = \
     \
-    src/frame/3t/mult.h
+    tblis/frame/3t/mult.h
 
-marrayincludedir = $(pkgincludedir)/external/marray/marray
+marraydetailincludedir = $(includedir)/marray/detail
+marraydetailinclude_HEADERS = \
+    \
+    tblis/external/marray/marray/detail/utility.hpp \
+    tblis/external/marray/marray/detail/vector_avx.hpp \
+    tblis/external/marray/marray/detail/vector_avx512.hpp \
+    tblis/external/marray/marray/detail/vector_sse41.hpp \
+    tblis/external/marray/marray/detail/vector.hpp
+
+marrayfwdincludedir = $(includedir)/marray/fwd
+marrayfwdinclude_HEADERS = \
+    \
+    tblis/external/marray/marray/fwd/expression_fwd.hpp \
+    tblis/external/marray/marray/fwd/marray_fwd.hpp
+
+marraydpdincludedir = $(includedir)/marray/dpd
+marraydpdinclude_HEADERS = \
+    \
+    tblis/external/marray/marray/dpd/dpd_range.hpp \
+    tblis/external/marray/marray/dpd/dpd_marray_base.hpp \
+    tblis/external/marray/marray/dpd/dpd_marray_view.hpp \
+    tblis/external/marray/marray/dpd/dpd_marray.hpp
+
+marrayindexedincludedir = $(includedir)/marray/indexed
+marrayindexedinclude_HEADERS = \
+    \
+    tblis/external/marray/marray/indexed/indexed_marray_base.hpp \
+    tblis/external/marray/marray/indexed/indexed_marray_view.hpp \
+    tblis/external/marray/marray/indexed/indexed_marray.hpp
+
+marrayindexeddpdincludedir = $(includedir)/marray/indexed_dpd
+marrayindexeddpdinclude_HEADERS = \
+    \
+    tblis/external/marray/marray/indexed_dpd/indexed_dpd_marray_base.hpp \
+    tblis/external/marray/marray/indexed_dpd/indexed_dpd_marray_view.hpp \
+    tblis/external/marray/marray/indexed_dpd/indexed_dpd_marray.hpp
+
+marrayincludedir = $(includedir)/marray
 marrayinclude_HEADERS = \
     \
-    src/external/marray/marray/detail/utility.hpp \
-    src/external/marray/marray/detail/vector_avx.hpp \
-    src/external/marray/marray/detail/vector_avx512.hpp \
-    src/external/marray/marray/detail/vector_sse41.hpp \
-    src/external/marray/marray/detail/vector.hpp \
-    src/external/marray/marray/dpd/dpd_range.hpp \
-    src/external/marray/marray/dpd/dpd_marray_base.hpp \
-    src/external/marray/marray/dpd/dpd_marray_view.hpp \
-    src/external/marray/marray/dpd/dpd_marray.hpp \
-    src/external/marray/marray/fwd/expression_fwd.hpp \
-    src/external/marray/marray/fwd/marray_fwd.hpp \
-    src/external/marray/marray/indexed/indexed_marray_base.hpp \
-    src/external/marray/marray/indexed/indexed_marray_view.hpp \
-    src/external/marray/marray/indexed/indexed_marray.hpp \
-    src/external/marray/marray/indexed_dpd/indexed_dpd_marray_base.hpp \
-    src/external/marray/marray/indexed_dpd/indexed_dpd_marray_view.hpp \
-    src/external/marray/marray/indexed_dpd/indexed_dpd_marray.hpp \
-    src/external/marray/marray/array_1d.hpp \
-    src/external/marray/marray/array_2d.hpp \
-    src/external/marray/marray/expression.hpp \
-    src/external/marray/marray/index_iterator.hpp \
-    src/external/marray/marray/marray_base.hpp \
-    src/external/marray/marray/marray_iterator.hpp \
-    src/external/marray/marray/marray_slice.hpp \
-    src/external/marray/marray/marray_view.hpp \
-    src/external/marray/marray/marray.hpp \
-    src/external/marray/marray/range.hpp \
-    src/external/marray/marray/rotate.hpp \
-    src/external/marray/marray/short_vector.hpp \
-    src/external/marray/marray/types.hpp
+    tblis/external/marray/marray/array_1d.hpp \
+    tblis/external/marray/marray/array_2d.hpp \
+    tblis/external/marray/marray/expression.hpp \
+    tblis/external/marray/marray/index_iterator.hpp \
+    tblis/external/marray/marray/marray_base.hpp \
+    tblis/external/marray/marray/marray_iterator.hpp \
+    tblis/external/marray/marray/marray_slice.hpp \
+    tblis/external/marray/marray/marray_view.hpp \
+    tblis/external/marray/marray/marray.hpp \
+    tblis/external/marray/marray/range.hpp \
+    tblis/external/marray/marray/rotate.hpp \
+    tblis/external/marray/marray/short_vector.hpp \
+    tblis/external/marray/marray/types.hpp
 
-stl_extincludedir = $(pkgincludedir)/external/stl_ext/stl_ext
+stl_extincludedir = $(includedir)/stl_ext
 stl_extinclude_HEADERS = \
     \
-    src/external/stl_ext/stl_ext/algorithm.hpp \
-    src/external/stl_ext/stl_ext/any.hpp \
-    src/external/stl_ext/stl_ext/bounded_vector.hpp \
-    src/external/stl_ext/stl_ext/complex.hpp \
-    src/external/stl_ext/stl_ext/cosort.hpp \
-    src/external/stl_ext/stl_ext/fill_iterator.hpp \
-    src/external/stl_ext/stl_ext/global_ptr.hpp \
-    src/external/stl_ext/stl_ext/iostream.hpp \
-    src/external/stl_ext/stl_ext/ptr_list.hpp \
-    src/external/stl_ext/stl_ext/ptr_vector.hpp \
-    src/external/stl_ext/stl_ext/string.hpp \
-    src/external/stl_ext/stl_ext/type_traits.hpp \
-    src/external/stl_ext/stl_ext/vector.hpp \
-    src/external/stl_ext/stl_ext/zip.hpp
+    tblis/external/stl_ext/stl_ext/algorithm.hpp \
+    tblis/external/stl_ext/stl_ext/any.hpp \
+    tblis/external/stl_ext/stl_ext/bounded_vector.hpp \
+    tblis/external/stl_ext/stl_ext/complex.hpp \
+    tblis/external/stl_ext/stl_ext/cosort.hpp \
+    tblis/external/stl_ext/stl_ext/fill_iterator.hpp \
+    tblis/external/stl_ext/stl_ext/global_ptr.hpp \
+    tblis/external/stl_ext/stl_ext/iostream.hpp \
+    tblis/external/stl_ext/stl_ext/ptr_list.hpp \
+    tblis/external/stl_ext/stl_ext/ptr_vector.hpp \
+    tblis/external/stl_ext/stl_ext/string.hpp \
+    tblis/external/stl_ext/stl_ext/type_traits.hpp \
+    tblis/external/stl_ext/stl_ext/vector.hpp \
+    tblis/external/stl_ext/stl_ext/zip.hpp
 
 noinst_LTLIBRARIES =
-lib_libtblis_la_LIBADD = src/external/tci/lib/libtci.la $(PLUGIN_ARCHIVE) -lblis
+lib_libtblis_la_LIBADD = tblis/external/tci/lib/libtci.la $(PLUGIN_ARCHIVE) -lblis
 
-DISTCLEANFILES = src/tblis_config.h
+DISTCLEANFILES = tblis/tblis_config.h
 
 if IS_CLANG
 CXXFLAGS += -Wno-pass-failed
@@ -189,9 +210,20 @@ bin_test_SOURCES = test/test.cxx \
 
 VPATH += $(srcdir)
 
-SUBDIRS = src/external/tci
+SUBDIRS = tblis/external/tci
 ACLOCAL_AMFLAGS = -I m4
-AM_CPPFLAGS = -I$(srcdir) -I$(srcdir)/src -I. -Isrc -Isrc/util -I$(srcdir)/src/external/tci -Isrc/external/tci/tci -I$(BLIS_PREFIX)/include
+AM_CPPFLAGS = -I$(srcdir) \
+              -I$(srcdir)/tblis \
+              -I$(srcdir)/tblis/external \
+              -I$(srcdir)/tblis/external/tci \
+              -I$(srcdir)/tblis/external/stl_ext \
+              -I$(srcdir)/tblis/external/marray \
+              -I$(srcdir)/tblis/external/catch \
+              -I$(builddir) \
+              -I$(builddir)/tblis \
+              -I$(builddir)/tblis/util \
+              -I$(builddir)/tblis/external/tci/tci \
+              -I$(BLIS_PREFIX)/include
 AM_LDFLAGS = -pthread -L$(BLIS_PREFIX)/lib
 bin_test_LDADD = lib/libtblis.la
 
@@ -208,16 +240,16 @@ $(BLIS_ARCHIVE): $(BLIS_DEPS)
 	@mkdir -p download/blis/installed
 	$(MAKE) -C download/blis install
 
-src/plugin/Makefile: $(PLUGIN_MAKEFILE_DEPS)
-	@mkdir -p src/plugin
-	@cd src/plugin && \
+tblis/plugin/Makefile: $(PLUGIN_MAKEFILE_DEPS)
+	@mkdir -p tblis/plugin
+	@cd tblis/plugin && \
 		$(BLIS_PREFIX)/share/blis/configure-plugin \
-			CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS) $(INCLUDE_PATHS) -I$(abs_srcdir)/src -I.. \
-				-I$(abs_builddir)/src/external/tci/tci -I$(abs_srcdir)/src/external/tci" \
-				-f --build --path=$(abs_srcdir)/src/plugin tblis
+			CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS) $(INCLUDE_PATHS) -I$(abs_srcdir)/tblis -I.. \
+				-I$(abs_builddir)/tblis/external/tci/tci -I$(abs_srcdir)/tblis/external/tci" \
+				-f --build --path=$(abs_srcdir)/tblis/plugin tblis
 
-$(PLUGIN_ARCHIVE): src/plugin/Makefile
-	$(MAKE) -C src/plugin
+$(PLUGIN_ARCHIVE): tblis/plugin/Makefile
+	$(MAKE) -C tblis/plugin
 
 if BUILD_BLIS
 $(BLIS_H): $(BLIS_ARCHIVE)
@@ -232,7 +264,7 @@ if BUILD_BLIS
 	@target=`echo $@ | sed s/-local//`; \
 	$(MAKE) -C download/blis $$target
 endif
-	@if [ -d src/plugin ]; then \
+	@if [ -d tblis/plugin ]; then \
 	target=`echo $@ | sed s/-local//`; \
-	$(MAKE) -C src/plugin $$target; \
+	$(MAKE) -C tblis/plugin $$target; \
 	fi

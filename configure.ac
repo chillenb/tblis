@@ -250,10 +250,10 @@ LT_INIT
 mkdir -p bin
 
 AC_CONFIG_FILES([Makefile])
-AX_PREFIX_CONFIG_H([src/tblis_config.h], [TBLIS])
+AX_PREFIX_CONFIG_H([tblis/tblis_config.h], [TBLIS])
 AC_OUTPUT
 
-TBLIS_CONFIG_SUBDIR([src/external/tci])
+TBLIS_CONFIG_SUBDIR([tblis/external/tci])
 
 if test "x$BUILD_BLIS" = "xyes"; then
     ( cd download/blis && ./configure -tomp,pthreads -p "$BLIS_PREFIX" --disable-blas --disable-cblas --enable-static --disable-shared "$blis_confname" )

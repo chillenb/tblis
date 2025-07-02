@@ -1,6 +1,8 @@
-#include <tblis/tblis.h>
+#include "marray/marray.hpp"
+#include "tblis/tblis.h"
 
 using namespace tblis;
+using namespace MArray;
 
 int main()
 {

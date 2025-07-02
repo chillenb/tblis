@@ -14,22 +14,22 @@
 #include <chrono>
 #include <list>
 
-#include "external/marray/marray/marray.hpp"
-#include "external/marray/marray/dpd/dpd_marray.hpp"
-#include "external/marray/marray/indexed/indexed_marray.hpp"
-#include "external/marray/marray/indexed_dpd/indexed_dpd_marray.hpp"
-#include "external/marray/marray/expression.hpp"
+#include "marray/marray.hpp"
+#include "marray/dpd/dpd_marray.hpp"
+#include "marray/indexed/indexed_marray.hpp"
+#include "marray/indexed_dpd/indexed_dpd_marray.hpp"
+#include "marray/expression.hpp"
 
 #include "tblis.h"
 #include "random.hpp"
 
-#include "external/stl_ext/stl_ext/algorithm.hpp"
-#include "external/stl_ext/stl_ext/iostream.hpp"
+#include "stl_ext/algorithm.hpp"
+#include "stl_ext/iostream.hpp"
 
 #include "frame/3t/dense/mult.hpp"
 #include "frame/3t/dpd/mult.hpp"
 
-#include "external/catch/catch.hpp"
+#include "catch.hpp"
 
 using std::string;
 using std::min;
@@ -206,39 +206,39 @@ struct templated_test_case_runner<Body>
 };
 
 #define REPLICATED_TEST_CASE(name, ntrial) \
-static void PASTECH(__replicated_test_case_body_, name)(); \
+static void TBLIS_CONCAT(__replicated_test_case_body_, name)(); \
 TEST_CASE(#name) \
 { \
     for (int trial = 0;trial < ntrial;trial++) \
     { \
         INFO_OR_PRINT("Trial " << (trial+1) << " of " << ntrial); \
-        PASTECH(__replicated_test_case_body_, name)(); \
+        TBLIS_CONCAT(__replicated_test_case_body_, name)(); \
     } \
 } \
-static void PASTECH(__replicated_test_case_body_, name)()
+static void TBLIS_CONCAT(__replicated_test_case_body_, name)()
 
 #define TEMPLATED_TEST_CASE(name, T, ...) \
-template <typename T> struct PASTECH(__templated_test_case_body_, name) \
+template <typename T> struct TBLIS_CONCAT(__templated_test_case_body_, name) \
 { \
     static void run(); \
 }; \
 TEST_CASE(#name) \
 { \
-    templated_test_case_runner<PASTECH(__templated_test_case_body_, name), __VA_ARGS__>::run(); \
+    templated_test_case_runner<TBLIS_CONCAT(__templated_test_case_body_, name), __VA_ARGS__>::run(); \
 } \
-template <typename T> void PASTECH(__templated_test_case_body_, name)<T>::run()
+template <typename T> void TBLIS_CONCAT(__templated_test_case_body_, name)<T>::run()
 
 #define REPLICATED_TEMPLATED_TEST_CASE(name, ntrial, T, ...) \
-template <typename T> static void PASTECH(__replicated_templated_test_case_body_, name)(); \
+template <typename T> static void TBLIS_CONCAT(__replicated_templated_test_case_body_, name)(); \
 TEMPLATED_TEST_CASE(name, T, __VA_ARGS__) \
 { \
     for (int trial = 0;trial < ntrial;trial++) \
     { \
         INFO_OR_PRINT("Trial " << (trial+1) << " of " << ntrial); \
-        PASTECH(__replicated_templated_test_case_body_, name)<T>(); \
+        TBLIS_CONCAT(__replicated_templated_test_case_body_, name)<T>(); \
     } \
 } \
-template <typename T> static void PASTECH(__replicated_templated_test_case_body_, name)()
+template <typename T> static void TBLIS_CONCAT(__replicated_templated_test_case_body_, name)()
 
 constexpr static int ulp_factor = 32;
 

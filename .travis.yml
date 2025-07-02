@@ -30,7 +30,7 @@ addons:
     - libiomp-dev
     - libtbb-dev
     #- binutils-2.26
-    
+
 install:
   #- 'if [ "$TRAVIS_OS_NAME" = "linux" ]; then
   #      export PATH=/usr/lib/binutils-2.26/bin:${PATH};
@@ -49,7 +49,7 @@ script:
   - $CXX --version
   - as --version
   - ./configure CC="$CC" CXX="$CXX" --enable-threading="$THREADING" --enable-config="$BUILD_CONFIG" --prefix=`pwd`/install
-  - cat config.log src/external/tci/config.log
+  - cat config.log tblis/external/tci/config.log
   - make -j 2
   - export TBLIS_NUM_THREADS=2
   - if [ $RUN_TEST -eq 1 ]; then travis_wait 30 bin/test; fi

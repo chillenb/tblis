@@ -45,7 +45,7 @@ AC_DEFUN([AQ_WITH_PACKAGE],
         include_package=no
     else
         if test x"$download" = xyes && test x"$2" != x; then
-            AS_VAR_SET([pkg_dir], [src/external/]m4_tolower([$1]))
+            AS_VAR_SET([pkg_dir], [tblis/external/]m4_tolower([$1]))
             if ! test -d $pkg_dir; then
                 AC_MSG_NOTICE([downloading $1 from external Git repository...])
                 if ! git clone -q $2 $pkg_dir; then
