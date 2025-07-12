@@ -205,6 +205,7 @@ set(PLUGIN_FLAGS_LIST
     -I${CMAKE_CURRENT_SOURCE_DIR}/tblis/external/stl_ext
     -I${CMAKE_CURRENT_SOURCE_DIR}/tblis/external/marray
     -I${CMAKE_CURRENT_SOURCE_DIR}/tblis/external/tci
+    -I${CMAKE_CURRENT_BINARY_DIR}/tblis/external/tci/tci
 )
 
 string(REPLACE ";" " " PLUGIN_FLAGS "${PLUGIN_FLAGS_LIST}")
@@ -306,3 +307,9 @@ install(TARGETS tblis
     FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILE_SET config_header DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
+
+
+option(TBLIS_BUILD_PYTHON "Build Python bindings for tblis" OFF)
+if(TBLIS_BUILD_PYTHON)
+    add_subdirectory(python)
+endif()
