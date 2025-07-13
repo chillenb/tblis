@@ -1,15 +1,13 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(tblis LANGUAGES C CXX VERSION 2.0 HOMEPAGE_URL "http://www.github.com/devinamatthews/tblis")
-set(CMAKE_CXX_STANDARD 20)
 
 include(GNUInstallDirs)
-include(ExternalProject)
+include(FetchContent)
 
 include(CheckIncludeFile)
 include(CheckIncludeFiles)
 include(CheckCompilerFlag)
-
 include(CheckFunctionExists)
 include(CheckSymbolExists)
 
@@ -17,6 +15,7 @@ include(CheckSymbolExists)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
+
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 
@@ -74,7 +73,7 @@ set(TBLIS_SOURCES
 
 
 add_library(tblis SHARED ${TBLIS_SOURCES})
-
+set_target_properties(tblis PROPERTIES CXX_STANDARD 20)
 
 
 # Read the BLIS git tag
@@ -94,20 +93,45 @@ set(BLIS_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/blis CACHE PATH "Set the ins
 set(BLIS_CONFIGURE_PLUGIN_SCRIPT ${BLIS_INSTALL_PREFIX}/share/blis/configure-plugin)
 set(BLIS_STATIC_LIBRARY ${BLIS_INSTALL_PREFIX}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}blis${CMAKE_STATIC_LIBRARY_SUFFIX})
 
-ExternalProject_Add(blis_external
-GIT_REPOSITORY https://github.com/flame/blis.git
-GIT_TAG ${BLIS_GIT_TAG}
-UPDATE_DISCONNECTED ON
-CONFIGURE_COMMAND <SOURCE_DIR>/configure ${BLIS_CONFIG_FLAGS} --prefix=${CMAKE_CURRENT_BINARY_DIR}/blis ${BLIS_CONFIG_FAMILY}
-INSTALL_COMMAND ${MAKE_EXECUTABLE} install
-TEST_COMMAND ""
-BUILD_BYPRODUCTS ${BLIS_CONFIGURE_PLUGIN_SCRIPT}
-    ${BLIS_STATIC_LIBRARY}
-    ${BLIS_INSTALL_PREFIX}/include/blis/blis.h
+FetchContent_Declare(blis_external
+    GIT_REPOSITORY https://github.com/flame/blis.git
+    GIT_TAG ${BLIS_GIT_TAG}
 )
 
-add_library(blis STATIC IMPORTED GLOBAL)
+FetchContent_MakeAvailable(blis_external)
 
+# configure BLIS at CMake configure time
+execute_process(
+    WORKING_DIRECTORY ${blis_external_SOURCE_DIR}
+    COMMAND ${blis_external_SOURCE_DIR}/configure CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} ${BLIS_CONFIG_FLAGS} --prefix=${BLIS_INSTALL_PREFIX} ${BLIS_CONFIG_FAMILY}
+)
+
+# extract the blis configuration name (at CMake configure time) into BLIS_CONFNAME
+execute_process(
+    INPUT_FILE ${blis_external_SOURCE_DIR}/config.mk
+    COMMAND grep ^CONFIG_NAME
+    COMMAND awk "{ print \$3 }"
+    OUTPUT_VARIABLE BLIS_CONFNAME
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# build and install BLIS at CMake build time.
+add_custom_command(
+    OUTPUT configure ${BLIS_STATIC_LIBRARY} ${BLIS_CONFIGURE_PLUGIN_SCRIPT}
+    WORKING_DIRECTORY ${blis_external_SOURCE_DIR}
+    COMMAND ${MAKE_EXECUTABLE} install
+)
+
+# custom target to ensure BLIS is built before tblis
+add_custom_target(
+    build_blis_target
+    DEPENDS ${BLIS_CONFIGURE_PLUGIN_SCRIPT} ${BLIS_STATIC_LIBRARY}
+)
+
+message(STATUS "BLIS configuration name: ${BLIS_CONFNAME}")
+
+# make an imported library target for BLIS
+add_library(blis STATIC IMPORTED GLOBAL)
 set(BLIS_INCLUDE_DIRS ${BLIS_INSTALL_PREFIX}/include)
 file(MAKE_DIRECTORY ${BLIS_INCLUDE_DIRS})
 
@@ -117,9 +141,8 @@ set_target_properties(blis PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/blis/include
     INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/blis/include/blis
 )
-
-
-add_dependencies(tblis blis_external)
+add_dependencies(blis ${BLIS_STATIC_LIBRARY})
+add_dependencies(tblis build_blis_target)
 
 
 set(TBLIS_LABEL_TYPE "char" CACHE STRING "Default index label type (default: char)")
@@ -127,7 +150,7 @@ set(TBLIS_LEN_TYPE "ptrdiff_t" CACHE STRING "Default length type (default: ptrdi
 set(TBLIS_STRIDE_TYPE "ptrdiff_t" CACHE STRING "Default stride type (default: ptrdiff_t)")
 set(TBLIS_RESTRICT "__restrict__" CACHE STRING "Default restrict keyword (default: __restrict__)")
 
-# Hardcode this for now, since we set CMAKE_CXX_STANDARD to 20
+# Hardcode this for now, since we set CXX_STANDARD to 20 for tblis.
 set(TBLIS_HAVE_CXX20 ON)
 
 check_include_file(dlfcn.h TBLIS_HAVE_DLFCN_H)
@@ -195,8 +218,6 @@ target_include_directories(tblis PUBLIC
 
 target_link_libraries(tblis PUBLIC marray tci stl_ext)
 
-
-
 set(PLUGIN_FLAGS_LIST
     ${CMAKE_CXX_FLAGS}
     -std=c++20
@@ -210,36 +231,30 @@ set(PLUGIN_FLAGS_LIST
 
 string(REPLACE ";" " " PLUGIN_FLAGS "${PLUGIN_FLAGS_LIST}")
 
-# Build the BLIS plugin for TBLIS
-ExternalProject_Add_Step(blis_external
-    build_tblis_plugin
-    DEPENDEES install
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tblis/plugin
-    JOB_SERVER_AWARE 1
-    COMMAND ${BLIS_CONFIGURE_PLUGIN_SCRIPT} CXX=${CMAKE_CXX_COMPILER} CXXFLAGS=${PLUGIN_FLAGS} -f --build --path=${CMAKE_CURRENT_SOURCE_DIR}/tblis/plugin tblis
+# the plugin archive name (e.g., libblis_tblis.a)
+set(TBLIS_PLUGIN_ARCHIVE ${CMAKE_CURRENT_SOURCE_DIR}/tblis/plugin/lib/${BLIS_CONFNAME}/${CMAKE_STATIC_LIBRARY_PREFIX}blis_tblis${CMAKE_STATIC_LIBRARY_SUFFIX})
+
+# configure and build the plugin
+add_custom_command(
+    OUTPUT ${TBLIS_PLUGIN_ARCHIVE}
+    DEPENDS build_blis_target
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tblis/plugin
+    COMMAND ${BLIS_CONFIGURE_PLUGIN_SCRIPT} CXX=${CMAKE_CXX_COMPILER} CXXFLAGS="${PLUGIN_FLAGS_LIST}" -f --build --path=${CMAKE_CURRENT_SOURCE_DIR}/tblis/plugin tblis
     COMMAND ${MAKE_EXECUTABLE}
 )
 
-# the plugin archive name (e.g., libblis_tblis.a)
-set(TBLIS_PLUGIN_ARCHIVE ${CMAKE_STATIC_LIBRARY_PREFIX}blis_tblis${CMAKE_STATIC_LIBRARY_SUFFIX})
-
-# copy the plugin archive to the build directory
-# workaround because CMake doesn't know the BLIS confname at configure time
-add_custom_target(tblis_plugin_tgt
-    COMMENT "Copy BLIS plugin to build directory"
-    DEPENDS blis_external
-    COMMAND cat ${BLIS_INSTALL_PREFIX}/share/blis/config.mk | grep '^CONFIG_NAME' | awk '{print $$3}' > BLIS_CONFNAME.tmp
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/tblis/plugin/lib/`cat BLIS_CONFNAME.tmp`/${TBLIS_PLUGIN_ARCHIVE} ${CMAKE_CURRENT_BINARY_DIR}
-    BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/${TBLIS_PLUGIN_ARCHIVE}
-    SOURCES tblis/tblis_config.h
+# custom target to make sure the plugin is built
+add_custom_target(build_tblis_plugin_target
+    DEPENDS ${TBLIS_PLUGIN_ARCHIVE}
+    COMMENT "Building TBLIS plugin for BLIS"
 )
 
 add_library(tblis_plugin_lib STATIC IMPORTED GLOBAL)
 set_target_properties(tblis_plugin_lib PROPERTIES
-    IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/${TBLIS_PLUGIN_ARCHIVE}
+    IMPORTED_LOCATION ${TBLIS_PLUGIN_ARCHIVE}
 )
+add_dependencies(tblis build_tblis_plugin_target)
 
-add_dependencies(tblis tblis_plugin_tgt)
 
 # finally link everything together
 target_link_libraries(tblis PRIVATE blis tblis_plugin_lib)
