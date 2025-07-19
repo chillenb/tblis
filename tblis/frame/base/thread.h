@@ -13,7 +13,7 @@ unsigned tblis_get_num_threads();
 TBLIS_EXPORT
 void tblis_set_num_threads(unsigned num_threads);
 
-#if defined(TBLIS_ENABLE_CPLUSPLUS)
+#if TBLIS_ENABLE_CPLUSPLUS
 
 #include <vector>
 #include <utility>

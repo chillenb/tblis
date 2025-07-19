@@ -16,7 +16,7 @@ void tblis_tensor_scale(const tblis_comm* comm,
                               tblis_tensor* A,
                         const label_type* idx_A);
 
-#if defined(TBLIS_ENABLE_CPLUSPLUS)
+#if TBLIS_ENABLE_CPLUSPLUS
 
 inline
 void scale(const communicator& comm,

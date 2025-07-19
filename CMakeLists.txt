@@ -212,8 +212,8 @@ function(add_subdirectories)
     #need a new scope here
     set(ENABLE_SHARED OFF CACHE INTERNAL "" FORCE)
     set(ENABLE_STATIC ON CACHE INTERNAL "" FORCE)
-    add_subdirectory(src/external/tci)
-    add_subdirectory(src/external/marray)
+    add_subdirectory(tblis/external/tci)
+    add_subdirectory(tblis/external/marray)
 endfunction()
 
 add_subdirectories()
@@ -298,16 +298,16 @@ set_target_properties(blis PROPERTIES
 )
 add_dependencies(blis blis-install)
 
-set(TBLIS_PLUGIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/plugin)
+set(TBLIS_PLUGIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/tblis/plugin)
 file(MAKE_DIRECTORY ${TBLIS_PLUGIN_DIR})
 
 get_target_property(TCI_INCLUDES tci-static INTERFACE_INCLUDE_DIRECTORIES)
 list(TRANSFORM TCI_INCLUDES PREPEND -I)
 set(PLUGIN_INCLUDES
-    -I${CMAKE_CURRENT_SOURCE_DIR}/src
-    -I${CMAKE_CURRENT_BINARY_DIR}/src
-	-I${CMAKE_CURRENT_BINARY_DIR}/src/external/tci
-	-I${CMAKE_CURRENT_BINARY_DIR}/src/external/tci/tci
+    -I${CMAKE_CURRENT_SOURCE_DIR}
+    -I${CMAKE_CURRENT_BINARY_DIR}
+	-I${CMAKE_CURRENT_BINARY_DIR}/tblis/external/tci
+	-I${CMAKE_CURRENT_BINARY_DIR}/tblis/external/tci/tci
     ${TCI_INCLUDES}
 )
 
@@ -319,7 +319,7 @@ add_custom_command(
         CFLAGS="${PLUGIN_INCLUDES}"
         CXXFLAGS="${PLUGIN_INCLUDES}"
         -f --build
-        --path=${CMAKE_CURRENT_SOURCE_DIR}/src/plugin
+        --path=${CMAKE_CURRENT_SOURCE_DIR}/tblis/plugin
         tblis
     DEPENDS blis-install
     WORKING_DIRECTORY ${TBLIS_PLUGIN_DIR}
@@ -342,7 +342,7 @@ add_custom_target(plugin-build
 add_library(tblis-plugin STATIC IMPORTED GLOBAL)
 set_target_properties(tblis-plugin PROPERTIES
     IMPORTED_LOCATION ${TBLIS_PLUGIN_DIR}/lib/${BLIS_CONFIG_FAMILY}/libtblis-plugin.a
-    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/src/plugin
+    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/tblis/plugin
 )
 add_dependencies(tblis-plugin plugin-build)
 
@@ -352,65 +352,65 @@ add_dependencies(tblis-plugin plugin-build)
 #
 ###############################################################################
 
-configure_file(src/tblis_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/tblis_config.h @ONLY)
+configure_file(tblis/tblis_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/tblis/tblis_config.h @ONLY)
 configure_file(tblis.pc.in ${CMAKE_CURRENT_BINARY_DIR}/tblis.pc @ONLY)
 
 set(TBLIS_SOURCES
-    src/frame/0/add.cxx
-    src/frame/0/mult.cxx
-    src/frame/0/reduce.cxx
-    src/frame/1m/packm/packm_blk_bsmtc.cxx
-    src/frame/1m/packm/packm_blk_dpd.cxx
-    src/frame/1t/dense/add.cxx
-    src/frame/1t/dense/dot.cxx
-    src/frame/1t/dense/reduce.cxx
-    src/frame/1t/dense/scale.cxx
-    src/frame/1t/dense/set.cxx
-    src/frame/1t/dense/shift.cxx
-    src/frame/1t/dpd/add.cxx
-    src/frame/1t/dpd/dot.cxx
-    src/frame/1t/dpd/reduce.cxx
-    src/frame/1t/dpd/scale.cxx
-    src/frame/1t/dpd/set.cxx
-    src/frame/1t/dpd/shift.cxx
-    src/frame/1t/indexed/add.cxx
-    src/frame/1t/indexed/dot.cxx
-    src/frame/1t/indexed/reduce.cxx
-    src/frame/1t/indexed/scale.cxx
-    src/frame/1t/indexed/set.cxx
-    src/frame/1t/indexed/shift.cxx
-    src/frame/1t/indexed_dpd/add.cxx
-    src/frame/1t/indexed_dpd/dot.cxx
-    src/frame/1t/indexed_dpd/reduce.cxx
-    src/frame/1t/indexed_dpd/scale.cxx
-    src/frame/1t/indexed_dpd/set.cxx
-    src/frame/1t/indexed_dpd/shift.cxx
-    src/frame/1t/add.cxx
-    src/frame/1t/dot.cxx
-    src/frame/1t/reduce.cxx
-    src/frame/1t/scale.cxx
-    src/frame/1t/set.cxx
-    src/frame/1t/shift.cxx
-    src/frame/3m/gemm/gemm_ker_bsmtc.cxx
-    src/frame/3m/gemm/gemm_ker_dpd.cxx
-    src/frame/3t/dense/mult.cxx
-    src/frame/3t/dpd/mult.cxx
-    src/frame/3t/indexed/mult.cxx
-    src/frame/3t/indexed_dpd/mult.cxx
-    src/frame/3t/mult.cxx
-    src/frame/base/basic_types.cxx
-    src/frame/base/block_scatter.cxx
-    src/frame/base/dpd_block_scatter.cxx
-    src/frame/base/env.cxx
-    src/frame/base/tensor.cxx
-    src/frame/base/thread.cxx
+    tblis/frame/0/add.cxx
+    tblis/frame/0/mult.cxx
+    tblis/frame/0/reduce.cxx
+    tblis/frame/1m/packm/packm_blk_bsmtc.cxx
+    tblis/frame/1m/packm/packm_blk_dpd.cxx
+    tblis/frame/1t/dense/add.cxx
+    tblis/frame/1t/dense/dot.cxx
+    tblis/frame/1t/dense/reduce.cxx
+    tblis/frame/1t/dense/scale.cxx
+    tblis/frame/1t/dense/set.cxx
+    tblis/frame/1t/dense/shift.cxx
+    tblis/frame/1t/dpd/add.cxx
+    tblis/frame/1t/dpd/dot.cxx
+    tblis/frame/1t/dpd/reduce.cxx
+    tblis/frame/1t/dpd/scale.cxx
+    tblis/frame/1t/dpd/set.cxx
+    tblis/frame/1t/dpd/shift.cxx
+    tblis/frame/1t/indexed/add.cxx
+    tblis/frame/1t/indexed/dot.cxx
+    tblis/frame/1t/indexed/reduce.cxx
+    tblis/frame/1t/indexed/scale.cxx
+    tblis/frame/1t/indexed/set.cxx
+    tblis/frame/1t/indexed/shift.cxx
+    tblis/frame/1t/indexed_dpd/add.cxx
+    tblis/frame/1t/indexed_dpd/dot.cxx
+    tblis/frame/1t/indexed_dpd/reduce.cxx
+    tblis/frame/1t/indexed_dpd/scale.cxx
+    tblis/frame/1t/indexed_dpd/set.cxx
+    tblis/frame/1t/indexed_dpd/shift.cxx
+    tblis/frame/1t/add.cxx
+    tblis/frame/1t/dot.cxx
+    tblis/frame/1t/reduce.cxx
+    tblis/frame/1t/scale.cxx
+    tblis/frame/1t/set.cxx
+    tblis/frame/1t/shift.cxx
+    tblis/frame/3m/gemm/gemm_ker_bsmtc.cxx
+    tblis/frame/3m/gemm/gemm_ker_dpd.cxx
+    tblis/frame/3t/dense/mult.cxx
+    tblis/frame/3t/dpd/mult.cxx
+    tblis/frame/3t/indexed/mult.cxx
+    tblis/frame/3t/indexed_dpd/mult.cxx
+    tblis/frame/3t/mult.cxx
+    tblis/frame/base/basic_types.cxx
+    tblis/frame/base/block_scatter.cxx
+    tblis/frame/base/dpd_block_scatter.cxx
+    tblis/frame/base/env.cxx
+    tblis/frame/base/tensor.cxx
+    tblis/frame/base/thread.cxx
 )
 
 add_library(tblis-objects OBJECT ${TBLIS_SOURCES})
 target_link_libraries(tblis-objects PRIVATE tblis-plugin blis tci-static Marray)
 target_include_directories(tblis-objects PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tblis>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/tblis>
     $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>
 )
 set_target_properties(tblis-objects PROPERTIES
@@ -433,6 +433,11 @@ if (ENABLE_SHARED)
     set_target_properties(TBLIS PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
     set_target_properties(TBLIS PROPERTIES OUTPUT_NAME tblis)
     list(APPEND TBLIS_TARGETS TBLIS)
+    target_include_directories(TBLIS PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tblis>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/tblis>
+        $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>
+    )
 endif()
 
 if (ENABLE_STATIC)
@@ -441,6 +446,11 @@ if (ENABLE_STATIC)
     set_target_properties(TBLIS-Static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
     set_target_properties(TBLIS-Static PROPERTIES OUTPUT_NAME tblis)
     list(APPEND TBLIS_TARGETS TBLIS-Static)
+    target_include_directories(TBLIS-Static PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tblis>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/tblis>
+        $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>
+    )
 endif()
 
 list(GET TBLIS_TARGETS 0 TBLIS_MAIN_TARGET)
@@ -450,25 +460,25 @@ list(GET TBLIS_TARGETS 0 TBLIS_STATIC_IF_POSSIBLE)
 # Select header files to be installed
 target_sources(${TBLIS_MAIN_TARGET}
     INTERFACE FILE_SET tblis_headers TYPE HEADERS
-    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
+    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/tblis ${CMAKE_CURRENT_BINARY_DIR}/tblis
     FILES
-        src/frame/base/aligned_allocator.hpp
-        src/frame/base/alignment.hpp
-        src/frame/base/basic_types.h
-        src/frame/base/thread.h
-        src/frame/1t/add.h
-        src/frame/1t/reduce.h
-        src/frame/1t/scale.h
-        src/frame/1t/set.h
-        src/frame/1t/shift.h
-        src/frame/3t/mult.h
-        src/tblis.h
+        tblis/frame/base/aligned_allocator.hpp
+        tblis/frame/base/alignment.hpp
+        tblis/frame/base/basic_types.h
+        tblis/frame/base/thread.h
+        tblis/frame/1t/add.h
+        tblis/frame/1t/reduce.h
+        tblis/frame/1t/scale.h
+        tblis/frame/1t/set.h
+        tblis/frame/1t/shift.h
+        tblis/frame/3t/mult.h
+        tblis/tblis.h
 )
 target_sources(${TBLIS_MAIN_TARGET}
     INTERFACE FILE_SET config_header TYPE HEADERS
-    BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/src
+    BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/tblis
     FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/src/tblis_config.h
+        ${CMAKE_CURRENT_BINARY_DIR}/tblis/tblis_config.h
 )
 target_sources(${TBLIS_MAIN_TARGET}
     INTERFACE FILE_SET public_headers TYPE HEADERS

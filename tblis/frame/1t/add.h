@@ -17,7 +17,7 @@ void tblis_tensor_add(const tblis_comm* comm,
                             tblis_tensor* B,
                       const label_type* idx_B);
 
-#if defined(TBLIS_ENABLE_CPLUSPLUS)
+#if TBLIS_ENABLE_CPLUSPLUS
 
 inline
 void add(const communicator& comm,

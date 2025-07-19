@@ -15,7 +15,7 @@ void tblis_tensor_mult(const tblis_comm* comm, const tblis_config* cntx,
                        const tblis_tensor* B, const label_type* idx_B,
                              tblis_tensor* C, const label_type* idx_C);
 
-#if defined(TBLIS_ENABLE_CPLUSPLUS)
+#if TBLIS_ENABLE_CPLUSPLUS
 
 inline
 void mult(const communicator& comm,

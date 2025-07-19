@@ -12,9 +12,15 @@
 #include <string.h>
 #include <assert.h>
 
-#if __cplusplus >= 201703l && !defined(TBLIS_DISABLE_CPLUSPLUS)
-#define TBLIS_ENABLE_CPLUSPLUS
+#ifndef TBLIS_ENABLE_CPLUSPLUS
+
+#if defined(cplusplus) && __cplusplus >= 202002L && !defined(BLIS_DISABLE_CPLUSPLUS)
+#define TBLIS_ENABLE_CPLUSPLUS 1
+#else
+#define TBLIS_ENABLE_CPLUSPLUS 0
 #endif
+
+#endif //TBLIS_ENABLE_CPLUSPLUS
 
 #include "tblis/tblis_config.h"
 
@@ -24,7 +30,16 @@
 #define TBLIS_CONCAT(x,y) TBLIS_CONCAT_(x,y)
 #define TBLIS_FIRST_ARG(arg,...) arg
 
-#ifdef TBLIS_ENABLE_CPLUSPLUS
+#ifdef __cplusplus
+#include <complex>
+typedef std::complex<float> scomplex;
+typedef std::complex<double> dcomplex;
+#else
+typedef _Complex float scomplex;
+typedef _Complex double dcomplex;
+#endif
+
+#if TBLIS_ENABLE_CPLUSPLUS
 
     extern "C"
     {
@@ -39,7 +54,6 @@
 
     #include <utility>
     #include <array>
-    #include <complex>
 
     inline void __attribute__((format(printf, 1, 2),noreturn))
     tblis_abort_with_message(const char* fmt, ...)
@@ -80,13 +94,13 @@
     #define TBLIS_BEGIN_NAMESPACE namespace tblis {
     #define TBLIS_END_NAMESPACE }
 
-#else
+#else //TBLIS_ENABLE_CPLUSPLUS
 
     #define TBLIS_EXPORT
     #define TBLIS_BEGIN_NAMESPACE
     #define TBLIS_END_NAMESPACE
 
-#endif
+#endif //TBLIS_ENABLE_CPLUSPLUS
 
 TBLIS_BEGIN_NAMESPACE
 
@@ -121,7 +135,7 @@ typedef TBLIS_STRIDE_TYPE stride_type;
 typedef TBLIS_LABEL_TYPE label_type;
 #define TBLIS_MAX_UNROLL 8
 
-#ifdef TBLIS_ENABLE_CPLUSPLUS
+#if TBLIS_ENABLE_CPLUSPLUS
 
     using scomplex = std::complex<float>;
     using dcomplex = std::complex<double>;
@@ -180,7 +194,7 @@ typedef TBLIS_LABEL_TYPE label_type;
     FOREACH_TYPE(scomplex); \
     FOREACH_TYPE(dcomplex);
 
-#endif
+#endif //TBLIS_ENABLE_CPLUSPLUS
 
 typedef struct tblis_scalar
 {
@@ -191,13 +205,13 @@ typedef struct tblis_scalar
         scomplex c;
         dcomplex z;
 
-#if defined(TBLIS_ENABLE_CPLUSPLUS)
+#if TBLIS_ENABLE_CPLUSPLUS
         scalar() : z(0.0, 0.0) {}
 #endif
     } data;
     type_t type;
 
-#if defined(TBLIS_ENABLE_CPLUSPLUS)
+#if TBLIS_ENABLE_CPLUSPLUS
 
     /*
     tblis_scalar()
@@ -592,11 +606,11 @@ typedef struct tblis_scalar
         return os;
     }
 
-#endif
+#endif //TBLIS_ENABLE_CPLUSPLUS
 
 } tblis_scalar;
 
-#if defined(TBLIS_ENABLE_CPLUSPLUS)
+#if TBLIS_ENABLE_CPLUSPLUS
 
 template <> inline
 float& tblis_scalar::get<float>() { return data.s; }
@@ -610,7 +624,7 @@ scomplex& tblis_scalar::get<scomplex>() { return data.c; }
 template <> inline
 dcomplex& tblis_scalar::get<dcomplex>() { return data.z; }
 
-#endif
+#endif //TBLIS_ENABLE_CPLUSPLUS
 
 TBLIS_EXPORT void tblis_init_scalar_s(tblis_scalar* s, float value);
 
@@ -630,7 +644,7 @@ typedef struct tblis_tensor
     len_type* len;
     stride_type* stride;
 
-#if defined(TBLIS_ENABLE_CPLUSPLUS)
+#if TBLIS_ENABLE_CPLUSPLUS
 
     tblis_tensor()
     : type(TYPE_DOUBLE), conj(false), scalar(1.0), data(nullptr),
@@ -657,7 +671,7 @@ typedef struct tblis_tensor
       data(const_cast<T*>(A)), ndim(ndim), len(const_cast<len_type*>(len)),
       stride(const_cast<stride_type*>(stride)) {}
 
-#endif
+#endif //TBLIS_ENABLE_CPLUSPLUS
 
 } tblis_tensor;
 
@@ -695,7 +709,7 @@ TBLIS_EXPORT void tblis_init_tensor_z(tblis_tensor* t,
 
 TBLIS_END_NAMESPACE
 
-#if defined(TBLIS_ENABLE_CPLUSPLUS)
+#if TBLIS_ENABLE_CPLUSPLUS
 
 #include <string>
 
@@ -823,6 +837,6 @@ label_vector idx(const std::string& from, label_vector&& to = label_vector());
 
 }
 
-#endif
+#endif //TBLIS_ENABLE_CPLUSPLUS
 
 #endif

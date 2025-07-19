@@ -19,7 +19,7 @@ void tblis_tensor_reduce(const tblis_comm* comm,
                          tblis_scalar* result,
                          len_type* idx);
 
-#if defined(TBLIS_ENABLE_CPLUSPLUS)
+#if TBLIS_ENABLE_CPLUSPLUS
 
 template <typename T=scalar>
 struct reduce_result

@@ -18,7 +18,7 @@ void tblis_tensor_dot(const tblis_comm* comm,
                       const label_type* idx_B,
                       tblis_scalar* result);
 
-#if defined(TBLIS_ENABLE_CPLUSPLUS)
+#if TBLIS_ENABLE_CPLUSPLUS
 
 inline
 void dot(const communicator& comm,
