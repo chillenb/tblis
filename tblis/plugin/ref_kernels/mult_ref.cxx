@@ -1,6 +1,8 @@
 #include "../bli_plugin_tblis.h"
 #include "../kernel.hpp"
 
+#include "src/external/stl_ext/stl_ext/complex.hpp"
+
 namespace tblis
 {
 

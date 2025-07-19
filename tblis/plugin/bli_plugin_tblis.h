@@ -2,6 +2,7 @@
 #define _TBLIS_PLUGIN_PLUGIN_HPP_
 
 #include "tblis.h"
+#include "blis.h"
 
 #define BLIS_ENABLE_STD_COMPLEX
 #ifdef TBLIS_BLIS_BLIS_H
