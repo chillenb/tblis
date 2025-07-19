@@ -1,3 +1,0 @@
-breathe
-myst-parser
-sphinx-rtd-theme

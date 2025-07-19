@@ -1,0 +1,9 @@
+[submodule "tblis/external/tci"]
+	path = tblis/external/tci
+	url = git@github.com:MatthewsResearchGroup/tci
+[submodule "tblis/external/marray"]
+	path = tblis/external/marray
+	url = git@github.com:MatthewsResearchGroup/marray
+[submodule "tblis/external/stl_ext"]
+	path = tblis/external/stl_ext
+	url = git@github.com:devinamatthews/stl_ext
