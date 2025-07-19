@@ -1,5 +1,5 @@
 AC_INIT(TBLIS,
-    m4_normalize(m4_include([version])),
+    m4_normalize(m4_include([tblis-version])),
     damatthews@smu.edu,
     tblis,
     http://www.github.com/MatthewsResearchGroup/tblis)
