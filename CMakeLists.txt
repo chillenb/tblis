@@ -30,6 +30,18 @@ include(FetchContent)
 include(ExternalProject)
 include(CheckLibraryExists)
 
+if(NOT EXISTS ${CMAKE_CURENT_SOURCE_DIR}/tblis/external/marray/CMakeLists.txt)
+    message(FATAL_ERROR "MArray not found -- have you checkout out the git submodules?")
+endif()
+
+if(NOT EXISTS ${CMAKE_CURENT_SOURCE_DIR}/tblis/external/tci/CMakeLists.txt)
+    message(FATAL_ERROR "TCI not found -- have you checkout out the git submodules?")
+endif()
+
+if(NOT EXISTS ${CMAKE_CURENT_SOURCE_DIR}/tblis/external/stl_ext/stl_ext/complex.hpp)
+    message(FATAL_ERROR "stl_ext not found -- have you checkout out the git submodules?")
+endif()
+
 ###############################################################################
 #
 # Set up options

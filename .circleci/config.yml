@@ -86,7 +86,7 @@ jobs:
         default: download
     executor: << parameters.OS >>
     steps:
-      - run: git clone -b "$CIRCLE_BRANCH" --recurse-submodules "$CIRCLE_REPOSITORY_URL"
+      - checkout
 
       - when:
           condition:
@@ -101,6 +101,8 @@ jobs:
       - run:
           name: Configuring, Building, Testing
           command: |
+            git submodule update --init --recursive
+
             export DIST_PATH=$(pwd)
             export CC="<< parameters.CC >>"
             export OOT="<< parameters.OOT >>"
