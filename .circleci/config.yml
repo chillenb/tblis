@@ -9,16 +9,16 @@ branches:
 executors:
   linux: # Docker using the Base Convenience Image
     docker:
-      - image: cimg/base:2024.10
+      - image: 'cimg/base:2025.06'
   linuxnew: # Docker using the Base Convenience Image
     docker:
-      - image: cimg/base:current-22.04
+      - image: cimg/base:current-24.04
   macos: &macos-executor # macos executor running Xcode
     macos:
       xcode: 14.2.0
   linuxvm: # executor type
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
 
 workflows:
   build:
