@@ -86,7 +86,7 @@ jobs:
         default: download
     executor: << parameters.OS >>
     steps:
-      - checkout
+      - run: git clone -b "$CIRCLE_BRANCH" --recurse-submodules << pipeline.trigger_parameters.github_app.repo_url >>
 
       - when:
           condition:
