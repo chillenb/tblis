@@ -139,7 +139,7 @@ jobs:
                 mkdir ../blis
                 cd ../blis
                 git init
-                git remote add origin <repository-url>
+                git remote add origin git@github.com:flame/blis
                 git fetch --depth=1 origin $(cat $DIST_PATH/blis-git-tag)
                 git checkout FETCH_HEAD
                 ./configure --prefix=$(pwd)/usr --disable-shared --enable-static -tauto auto
