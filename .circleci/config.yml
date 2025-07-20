@@ -33,6 +33,7 @@ workflows:
       #     THREADING: none
       #     BUILD_CONFIG: auto
       #     PACKAGES: ''
+      #     BLIS: download
 
       - build:
           OOT: 1
@@ -46,6 +47,7 @@ workflows:
           THREADING: dispatch
       - build:
           THREADING: pthread
+          BLIS: external
       - build:
           THREADING: tbb
           PACKAGES: 'libtbb-dev'
@@ -79,6 +81,9 @@ jobs:
       PACKAGES:
         type: string
         default: ''
+      BLIS:
+        type: string
+        default: download
     executor: << parameters.OS >>
     steps:
       - checkout
@@ -96,13 +101,14 @@ jobs:
       - run:
           name: Configuring, Building, Testing
           command: |
-            export DIST_PATH=.
+            export DIST_PATH=$(pwd)
             export CC="<< parameters.CC >>"
             export OOT="<< parameters.OOT >>"
             export BUILD_CONFIG="<< parameters.BUILD_CONFIG >>"
             export THREADING="<< parameters.THREADING >>"
             export RUN_TESTS="<< parameters.RUN_TESTS >>"
             export TEST_INSTALL="<< parameters.TEST_INSTALL >>"
+            export BLIS="<< parameters.BLIS >>"
 
             case $CC in
                 gcc) export CXX=g++;;
@@ -110,8 +116,10 @@ jobs:
             esac
 
             pwd
-            if [ $OOT -eq 1 ]; then export DIST_PATH=`pwd`; mkdir ../oot; cd ../oot; chmod -R a-w $DIST_PATH; fi
+            if [ $OOT -eq 1 ]; then mkdir ../oot; cd ../oot; chmod -R a-w $DIST_PATH; fi
             pwd
+
+            BUILD_DIR=$(pwd)
 
             echo "Configuration:"
             echo "CC                = $CC"
@@ -121,8 +129,26 @@ jobs:
             echo "THREADING         = $THREADING"
             echo "RUN_TESTS         = $RUN_TESTS"
             echo "TEST_INSTALL      = $TEST_INSTALL"
+            echo "BLIS              = $BLIS"
+            echo "BUILD_DIR         = $BUILD_DIR"
+            echo "DIST_PATH         = $DIST_PATH"
 
-            CONFIGURE="$DIST_PATH/configure --prefix=$DIST_PATH/install --enable-threading=$THREADING CC=$CC CXX=$CXX --with-blis-confname=$BUILD_CONFIG"
+            CONFIG_ARGS="--prefix=$DIST_PATH/install --enable-threading=$THREADING CC=$CC CXX=$CXX --with-blis-config-family=$BUILD_CONFIG"
+
+            if [ $BLIS = external ]; then
+                mkdir ../blis
+                cd ../blis
+                git init
+                git remote add origin <repository-url>
+                git fetch --depth=1 origin $(cat $DIST_PATH/blis-git-tag)
+                git checkout FETCH_HEAD
+                ./configure --prefix=$(pwd)/usr --disable-shared --enable-static -tauto auto
+                make -j2 install
+                CONFIG_ARGS="$CONFIG_ARGS --with-blis-dir=$(pwd)/usr"
+                cd $BUILD_DIR
+            fi
+
+            CONFIGURE="$DIST_PATH/configure $CONFIG_ARGS"
             echo "Running $CONFIGURE"
             $CONFIGURE
             pwd
