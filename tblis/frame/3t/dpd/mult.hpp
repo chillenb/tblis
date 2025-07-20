@@ -1,10 +1,10 @@
 #ifndef _TBLIS_INTERNAL_3T_DPD_MULT_HPP_
 #define _TBLIS_INTERNAL_3T_DPD_MULT_HPP_
 
-#include "frame/base/thread.h"
-#include "frame/base/basic_types.h"
+#include "tblis/frame/base/thread.h"
+#include "tblis/frame/base/basic_types.h"
 
-#include "frame/1t/dpd/util.hpp"
+#include "tblis/frame/1t/dpd/util.hpp"
 
 #include "marray/dpd/dpd_marray_view.hpp"
 

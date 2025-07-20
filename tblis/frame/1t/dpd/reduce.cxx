@@ -1,7 +1,7 @@
 #include "util.hpp"
 #include "reduce.hpp"
-#include "frame/0/reduce.hpp"
-#include "frame/1t/dense/reduce.hpp"
+#include "tblis/frame/0/reduce.hpp"
+#include "tblis/frame/1t/dense/reduce.hpp"
 
 namespace tblis
 {

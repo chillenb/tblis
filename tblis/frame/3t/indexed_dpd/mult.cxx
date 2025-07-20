@@ -1,12 +1,12 @@
 #include "mult.hpp"
 
-#include "frame/1t/dense/add.hpp"
-#include "frame/1t/indexed_dpd/util.hpp"
-#include "frame/1t/indexed_dpd/set.hpp"
-#include "frame/1t/indexed_dpd/scale.hpp"
-#include "frame/3t/dense/mult.hpp"
+#include "tblis/frame/1t/dense/add.hpp"
+#include "tblis/frame/1t/indexed_dpd/util.hpp"
+#include "tblis/frame/1t/indexed_dpd/set.hpp"
+#include "tblis/frame/1t/indexed_dpd/scale.hpp"
+#include "tblis/frame/3t/dense/mult.hpp"
 
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/tensor.hpp"
 
 #include <memory>
 

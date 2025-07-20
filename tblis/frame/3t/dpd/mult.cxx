@@ -1,23 +1,23 @@
 #include "mult.hpp"
 
-#include "frame/0/add.hpp"
-#include "frame/0/mult.hpp"
-#include "frame/1t/dense/scale.hpp"
-#include "frame/1t/dense/set.hpp"
-#include "frame/1t/dpd/util.hpp"
-#include "frame/1t/dpd/add.hpp"
-#include "frame/1t/dpd/dot.hpp"
-#include "frame/1t/dpd/scale.hpp"
-#include "frame/1t/dpd/set.hpp"
-#include "frame/3t/dense/mult.hpp"
+#include "tblis/frame/0/add.hpp"
+#include "tblis/frame/0/mult.hpp"
+#include "tblis/frame/1t/dense/scale.hpp"
+#include "tblis/frame/1t/dense/set.hpp"
+#include "tblis/frame/1t/dpd/util.hpp"
+#include "tblis/frame/1t/dpd/add.hpp"
+#include "tblis/frame/1t/dpd/dot.hpp"
+#include "tblis/frame/1t/dpd/scale.hpp"
+#include "tblis/frame/1t/dpd/set.hpp"
+#include "tblis/frame/3t/dense/mult.hpp"
 
-#include "frame/base/tensor.hpp"
-#include "frame/base/dpd_block_scatter.hpp"
+#include "tblis/frame/base/tensor.hpp"
+#include "tblis/frame/base/dpd_block_scatter.hpp"
 
-#include "frame/1m/packm/packm_blk_dpd.hpp"
-#include "frame/3m/gemm/gemm_ker_dpd.hpp"
+#include "tblis/frame/1m/packm/packm_blk_dpd.hpp"
+#include "tblis/frame/3m/gemm/gemm_ker_dpd.hpp"
 
-#include "plugin/bli_plugin_tblis.h"
+#include "tblis/plugin/bli_plugin_tblis.h"
 
 namespace tblis
 {
@@ -755,6 +755,8 @@ void mult(type_t type, const communicator& comm, const cntx_t* cntx,
           const dim_vector& idx_C_BC,
           const dim_vector& idx_C_ABC)
 {
+    bli_init_once();
+
     if (beta.is_zero())
     {
         set(type, comm, cntx, beta, C, range(C.dimension()));

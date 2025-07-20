@@ -1,7 +1,7 @@
 #ifndef _TBLIS_THREAD_HPP_
 #define _TBLIS_THREAD_HPP_
 
-#include "tci.h"
+#include "tci.hpp"
 #include "basic_types.h"
 
 typedef tci_comm tblis_comm;

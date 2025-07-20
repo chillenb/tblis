@@ -35,7 +35,7 @@ include(ExternalProject)
 #
 ###############################################################################
 
-option(BUILD_TESTS "Build tests" OFF)
+option(ENABLE_TESTS "Build tests" OFF)
 
 option(ENABLE_SHARED "build a shared library" ON)
 
@@ -208,15 +208,14 @@ check_symbol_exists(_SC_NPROCESSORS_ONLN unistd.h TBLIS_HAVE__SC_NPROCESSORS_ONL
 # Find make
 find_program(MAKE_EXECUTABLE NAMES gmake make mingw32-make REQUIRED)
 
-function(add_subdirectories)
-    #need a new scope here
-    set(ENABLE_SHARED OFF CACHE INTERNAL "" FORCE)
-    set(ENABLE_STATIC ON CACHE INTERNAL "" FORCE)
-    add_subdirectory(tblis/external/tci)
-    add_subdirectory(tblis/external/marray)
-endfunction()
-
-add_subdirectories()
+set(ENABLE_SHARED_OLD ${ENABLE_SHARED})
+set(ENABLE_STATIC_OLD ${ENABLE_STATIC})
+set(ENABLE_SHARED OFF)
+set(ENABLE_STATIC ON)
+add_subdirectory(tblis/external/tci)
+add_subdirectory(tblis/external/marray)
+set(ENABLE_SHARED ${ENABLE_SHARED_OLD})
+set(ENABLE_STATIC ${ENABLE_STATIC_OLD})
 
 ###############################################################################
 #
@@ -243,10 +242,16 @@ FetchContent_GetProperties(
   POPULATED BLIS_POPULATED
 )
 
+set(BLIS_DEBUG_FLAG "")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(BLIS_DEBUG_FLAG "--enable-debug=noopt")
+endif()
+
 if (BLIS_POPULATED)
     message(CHECK_PASS "downloaded")
 
     if (NOT EXISTS ${BLIS_BINARY_DIR}/config.mk)
+
         # configure BLIS at CMake configure time
         message(STATUS "Configuring BLIS")
         execute_process(
@@ -255,6 +260,7 @@ if (BLIS_POPULATED)
                 --prefix=${BLIS_INSTALL_DIR}
                 --disable-shared
                 --enable-static
+                ${BLIS_DEBUG_FLAG}
                 --disable-blas
                 --disable-cblas
                 --enable-threading=auto
@@ -303,11 +309,15 @@ file(MAKE_DIRECTORY ${TBLIS_PLUGIN_DIR})
 
 get_target_property(TCI_INCLUDES tci-static INTERFACE_INCLUDE_DIRECTORIES)
 list(TRANSFORM TCI_INCLUDES PREPEND -I)
-set(PLUGIN_INCLUDES
+set(PLUGIN_FLAGS
     -I${CMAKE_CURRENT_SOURCE_DIR}
+    -I${CMAKE_CURRENT_SOURCE_DIR}/tblis
+    -I${CMAKE_CURRENT_SOURCE_DIR}/tblis/external/marray
+    -I${CMAKE_CURRENT_SOURCE_DIR}/tblis/external/tci
+    -I${CMAKE_CURRENT_SOURCE_DIR}/tblis/external/tci/include
     -I${CMAKE_CURRENT_BINARY_DIR}
 	-I${CMAKE_CURRENT_BINARY_DIR}/tblis/external/tci
-	-I${CMAKE_CURRENT_BINARY_DIR}/tblis/external/tci/tci
+	-I${CMAKE_CURRENT_BINARY_DIR}/tblis/external/tci/include
     ${TCI_INCLUDES}
 )
 
@@ -316,12 +326,14 @@ add_custom_command(
     COMMAND ${BLIS_INSTALL_DIR}/share/blis/configure-plugin
         CC=${CMAKE_C_COMPILER}
         CXX=${CMAKE_CXX_COMPILER}
-        CFLAGS="${PLUGIN_INCLUDES}"
-        CXXFLAGS="${PLUGIN_INCLUDES}"
+        CFLAGS="${PLUGIN_FLAGS}"
+        CXXFLAGS="${PLUGIN_FLAGS} -std=c++20"
+        ${BLIS_DEBUG_FLAG}
         -f --build
         --path=${CMAKE_CURRENT_SOURCE_DIR}/tblis/plugin
         tblis
     DEPENDS blis-install
+    COMMENT "Configuring BLIS plugin"
     WORKING_DIRECTORY ${TBLIS_PLUGIN_DIR}
     COMMAND_EXPAND_LISTS
 )
@@ -330,18 +342,19 @@ add_custom_target(plugin-configure
 )
 
 add_custom_command(
-    OUTPUT ${TBLIS_PLUGIN_DIR}/lib/${BLIS_CONFIG_FAMILY}/libtblis-plugin.a
+    OUTPUT ${TBLIS_PLUGIN_DIR}/lib/${BLIS_CONFIG_FAMILY}/libblis_tblis.a
     COMMAND ${MAKE_EXECUTABLE}
     DEPENDS plugin-configure
+    COMMENT "Building BLIS plugin"
     WORKING_DIRECTORY ${TBLIS_PLUGIN_DIR}
 )
 add_custom_target(plugin-build
-    DEPENDS ${TBLIS_PLUGIN_DIR}/lib/${BLIS_CONFIG_FAMILY}/libtblis-plugin.a
+    DEPENDS ${TBLIS_PLUGIN_DIR}/lib/${BLIS_CONFIG_FAMILY}/libblis_tblis.a
 )
 
 add_library(tblis-plugin STATIC IMPORTED GLOBAL)
 set_target_properties(tblis-plugin PROPERTIES
-    IMPORTED_LOCATION ${TBLIS_PLUGIN_DIR}/lib/${BLIS_CONFIG_FAMILY}/libtblis-plugin.a
+    IMPORTED_LOCATION ${TBLIS_PLUGIN_DIR}/lib/${BLIS_CONFIG_FAMILY}/libblis_tblis.a
     INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/tblis/plugin
 )
 add_dependencies(tblis-plugin plugin-build)
@@ -407,11 +420,14 @@ set(TBLIS_SOURCES
 )
 
 add_library(tblis-objects OBJECT ${TBLIS_SOURCES})
-target_link_libraries(tblis-objects PRIVATE tblis-plugin blis tci-static Marray)
+target_link_libraries(tblis-objects PUBLIC tblis-plugin blis marray tci-static)
 target_include_directories(tblis-objects PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tblis>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/tblis>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>
+)
+target_include_directories(tblis-objects PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tblis/external/stl_ext>
 )
 set_target_properties(tblis-objects PROPERTIES
     POSITION_INDEPENDENT_CODE 1
@@ -423,32 +439,36 @@ set_target_properties(tblis-objects PROPERTIES
     CXX_EXTENSIONS OFF
 )
 target_compile_options(tblis-objects
-    PRIVATE -Wno-return-type-c-linkage
+    PRIVATE -Wno-return-type-c-linkage -DMARRAY_ENABLE_ASSERTS -DTBLIS_DEBUG
 )
 add_dependencies(tblis-objects plugin-build)
 
 if (ENABLE_SHARED)
-    add_library(TBLIS SHARED $<TARGET_OBJECTS:tblis-objects>)
-    target_link_libraries(TBLIS PUBLIC ${PUBLIC_LIBS} tblis-plugin PRIVATE ${PRIVATE_LIBS})
-    set_target_properties(TBLIS PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-    set_target_properties(TBLIS PROPERTIES OUTPUT_NAME tblis)
-    list(APPEND TBLIS_TARGETS TBLIS)
-    target_include_directories(TBLIS PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tblis>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/tblis>
+    add_library(tblis SHARED $<TARGET_OBJECTS:tblis-objects>)
+    target_link_libraries(tblis PUBLIC ${PUBLIC_LIBS} tblis-plugin blis marray tci-static PRIVATE ${PRIVATE_LIBS})
+    set_target_properties(tblis PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib
+        OUTPUT_NAME tblis
+        INSTALL_NAME_DIR ${INSTALL_LIBDIR}
+    )
+    list(APPEND TBLIS_TARGETS tblis)
+    target_include_directories(tblis PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
         $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>
     )
+    target_link_options(tblis PRIVATE -fsanitize=address)
 endif()
 
 if (ENABLE_STATIC)
-    add_library(TBLIS-Static STATIC $<TARGET_OBJECTS:tblis-objects>)
-    target_link_libraries(TBLIS-Static PUBLIC ${PUBLIC_LIBS} tblis-plugin PRIVATE ${PRIVATE_LIBS})
-    set_target_properties(TBLIS-Static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-    set_target_properties(TBLIS-Static PROPERTIES OUTPUT_NAME tblis)
-    list(APPEND TBLIS_TARGETS TBLIS-Static)
-    target_include_directories(TBLIS-Static PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tblis>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/tblis>
+    add_library(tblis-static STATIC $<TARGET_OBJECTS:tblis-objects>)
+    target_link_libraries(tblis-static PUBLIC ${PUBLIC_LIBS} tblis-plugin blis marray tci-static PRIVATE ${PRIVATE_LIBS})
+    set_target_properties(tblis-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
+    set_target_properties(tblis-static PROPERTIES OUTPUT_NAME tblis)
+    list(APPEND TBLIS_TARGETS tblis-static)
+    target_include_directories(tblis-static PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
         $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>
     )
 endif()
@@ -467,6 +487,7 @@ target_sources(${TBLIS_MAIN_TARGET}
         tblis/frame/base/basic_types.h
         tblis/frame/base/thread.h
         tblis/frame/1t/add.h
+        tblis/frame/1t/dot.h
         tblis/frame/1t/reduce.h
         tblis/frame/1t/scale.h
         tblis/frame/1t/set.h
@@ -486,7 +507,8 @@ target_sources(${TBLIS_MAIN_TARGET}
     FILES tblis.h
 )
 
-install(TARGETS ${TBLIS_TARGETS} EXPORT tblis-targets
+install(TARGETS ${TBLIS_TARGETS}
+    EXPORT tblis-targets
     FILE_SET tblis_headers DESTINATION "${INSTALL_INCLUDEDIR}/tblis"
     FILE_SET config_header DESTINATION "${INSTALL_INCLUDEDIR}/tblis"
     FILE_SET public_headers DESTINATION "${INSTALL_INCLUDEDIR}"
@@ -494,8 +516,9 @@ install(TARGETS ${TBLIS_TARGETS} EXPORT tblis-targets
 
 install(EXPORT tblis-targets
     FILE TBLISTargets.cmake
-    NAMESPACE TBLIS::
-    DESTINATION ${INSTALL_LIBDIR}/cmake/TBLIS)
+        NAMESPACE TBLIS::
+        DESTINATION ${INSTALL_LIBDIR}/cmake/TBLIS
+)
 
 write_basic_package_version_file(
     "TBLISConfigVersion.cmake"
@@ -513,7 +536,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/tblis.pc" DESTINATION ${INSTALL_LIBDI
 #
 ###############################################################################
 
-if(BUILD_TESTS)
+if(ENABLE_TESTS)
 
     set(TEST_SOURCES
         test/test.cxx
@@ -542,8 +565,22 @@ if(BUILD_TESTS)
 
     FetchContent_MakeAvailable(Catch2)
 
-    add_executable(test TEST_SOURCES)
-    target_link_libraries(test PRIVATE ${TBLIS_STATIC_IF_POSSIBLE} Catch2::Catch2)
-    set_target_properties(test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
+    add_executable(tblis-test ${TEST_SOURCES})
+    target_link_libraries(tblis-test
+        PRIVATE ${TBLIS_STATIC_IF_POSSIBLE} Catch2::Catch2 marray tci-static
+    )
+    target_include_directories(tblis-test PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tblis/external/stl_ext>
+    )
+    set_target_properties(tblis-test PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin
+        RUNTIME_OUTPUT_NAME test
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED ON
+        CXX_EXTENSIONS OFF
+    )
+    target_compile_options(tblis-test
+        PRIVATE -DMARRAY_ENABLE_ASSERTS -DTBLIS_DEBUG
+    )
 
 endif()

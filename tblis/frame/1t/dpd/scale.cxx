@@ -1,6 +1,6 @@
 #include "util.hpp"
 #include "scale.hpp"
-#include "frame/1t/dense/scale.hpp"
+#include "tblis/frame/1t/dense/scale.hpp"
 
 namespace tblis
 {

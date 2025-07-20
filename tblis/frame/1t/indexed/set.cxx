@@ -1,7 +1,7 @@
 #include "set.hpp"
-#include "frame/1t/dense/set.hpp"
+#include "tblis/frame/1t/dense/set.hpp"
 
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/tensor.hpp"
 
 namespace tblis
 {

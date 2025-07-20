@@ -1,13 +1,13 @@
 #include "reduce.h"
 
-#include "plugin/bli_plugin_tblis.h"
+#include "tblis/plugin/bli_plugin_tblis.h"
 
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/tensor.hpp"
 
-#include "frame/1t/dense/reduce.hpp"
-#include "frame/1t/dpd/reduce.hpp"
-#include "frame/1t/indexed/reduce.hpp"
-#include "frame/1t/indexed_dpd/reduce.hpp"
+#include "tblis/frame/1t/dense/reduce.hpp"
+#include "tblis/frame/1t/dpd/reduce.hpp"
+#include "tblis/frame/1t/indexed/reduce.hpp"
+#include "tblis/frame/1t/indexed_dpd/reduce.hpp"
 
 namespace tblis
 {

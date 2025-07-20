@@ -1,8 +1,8 @@
 #ifndef _TBLIS_INTERNAL_3T_INDEXED_DPD_MULT_HPP_
 #define _TBLIS_INTERNAL_3T_INDEXED_DPD_MULT_HPP_
 
-#include "frame/base/thread.h"
-#include "frame/base/basic_types.h"
+#include "tblis/frame/base/thread.h"
+#include "tblis/frame/base/basic_types.h"
 
 #include "marray/indexed_dpd/indexed_dpd_marray_view.hpp"
 

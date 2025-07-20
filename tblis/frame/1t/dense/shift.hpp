@@ -1,8 +1,8 @@
 #ifndef _TBLIS_INTERNAL_1T_SHIFT_HPP_
 #define _TBLIS_INTERNAL_1T_SHIFT_HPP_
 
-#include "frame/base/thread.h"
-#include "frame/base/basic_types.h"
+#include "tblis/frame/base/thread.h"
+#include "tblis/frame/base/basic_types.h"
 
 namespace tblis
 {

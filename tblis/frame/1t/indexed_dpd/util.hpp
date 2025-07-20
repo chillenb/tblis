@@ -3,13 +3,13 @@
 
 #include <climits>
 
-#include "frame/base/thread.h"
-#include "frame/base/basic_types.h"
+#include "tblis/frame/base/thread.h"
+#include "tblis/frame/base/basic_types.h"
 
 #include "marray/indexed_dpd/indexed_dpd_marray_view.hpp"
 
-#include "frame/1t/dpd/util.hpp"
-#include "frame/1t/indexed/util.hpp"
+#include "tblis/frame/1t/dpd/util.hpp"
+#include "tblis/frame/1t/indexed/util.hpp"
 
 namespace tblis
 {

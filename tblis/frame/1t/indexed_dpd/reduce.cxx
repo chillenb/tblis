@@ -1,8 +1,8 @@
 #include "reduce.hpp"
-#include "frame/0/reduce.hpp"
-#include "frame/1t/dpd/reduce.hpp"
+#include "tblis/frame/0/reduce.hpp"
+#include "tblis/frame/1t/dpd/reduce.hpp"
 
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/tensor.hpp"
 
 namespace tblis
 {

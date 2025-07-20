@@ -1,15 +1,12 @@
 #ifndef _TBLIS_PLUGIN_PLUGIN_HPP_
 #define _TBLIS_PLUGIN_PLUGIN_HPP_
 
+#pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
+
 #include "tblis.h"
-#include "blis.h"
 
 #define BLIS_ENABLE_STD_COMPLEX
-#ifdef TBLIS_BLIS_BLIS_H
-#include "blis/blis.h"
-#else
 #include "blis.h"
-#endif
 
 namespace tblis
 {

@@ -1,9 +1,9 @@
 #include "shift.hpp"
-#include "frame/1t/dpd/scale.hpp"
-#include "frame/1t/dpd/set.hpp"
-#include "frame/1t/dpd/shift.hpp"
+#include "tblis/frame/1t/dpd/scale.hpp"
+#include "tblis/frame/1t/dpd/set.hpp"
+#include "tblis/frame/1t/dpd/shift.hpp"
 
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/tensor.hpp"
 
 namespace tblis
 {

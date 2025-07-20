@@ -1,8 +1,8 @@
 #include "dot.hpp"
 
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/tensor.hpp"
 
-#include "plugin/bli_plugin_tblis.h"
+#include "tblis/plugin/bli_plugin_tblis.h"
 
 namespace tblis
 {
@@ -15,6 +15,8 @@ void dot(type_t type, const communicator& comm, const cntx_t* cntx,
          bool conj_B, const char* B, const stride_vector& stride_B_AB,
          char* result)
 {
+    bli_init_once();
+
     bool empty = len_AB.size() == 0;
 
     const len_type ts = type_size[type];

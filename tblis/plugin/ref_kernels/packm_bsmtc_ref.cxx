@@ -1,5 +1,6 @@
 #include "../bli_plugin_tblis.h"
 #include "../kernel.hpp"
+#include "tblis/frame/base/basic_types.h"
 
 namespace tblis
 {

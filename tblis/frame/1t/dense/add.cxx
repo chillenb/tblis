@@ -3,11 +3,11 @@
 #include "scale.hpp"
 #include "shift.hpp"
 
-#include "frame/0/add.hpp"
+#include "tblis/frame/0/add.hpp"
 
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/tensor.hpp"
 
-#include "plugin/bli_plugin_tblis.h"
+#include "tblis/plugin/bli_plugin_tblis.h"
 
 namespace tblis
 {
@@ -293,6 +293,8 @@ void add(type_t type, const communicator& comm, const cntx_t* cntx,
          const stride_vector& stride_B_,
          const stride_vector& stride_B_AB_)
 {
+    bli_init_once();
+
     len_type n_AB = stl_ext::prod(len_AB_);
     len_type n_A = stl_ext::prod(len_A_);
     len_type n_B = stl_ext::prod(len_B_);

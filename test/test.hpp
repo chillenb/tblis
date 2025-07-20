@@ -26,10 +26,10 @@
 #include "stl_ext/algorithm.hpp"
 #include "stl_ext/iostream.hpp"
 
-#include "frame/3t/dense/mult.hpp"
-#include "frame/3t/dpd/mult.hpp"
+#include "tblis/frame/3t/dense/mult.hpp"
+#include "tblis/frame/3t/dpd/mult.hpp"
 
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
 
 using std::string;
 using std::min;
@@ -49,6 +49,7 @@ using namespace tblis::internal;
 using namespace tblis::internal;
 using namespace MArray;
 using namespace MArray::slice;
+using Catch::Approx;
 
 #define INFO_OR_PRINT(...) INFO(__VA_ARGS__); //cout << __VA_ARGS__ << endl;
 

@@ -1,21 +1,21 @@
 #include "shift.h"
 
-#include "plugin/bli_plugin_tblis.h"
+#include "tblis/plugin/bli_plugin_tblis.h"
 
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/tensor.hpp"
 
-#include "frame/1t/dense/scale.hpp"
-#include "frame/1t/dense/set.hpp"
-#include "frame/1t/dense/shift.hpp"
-#include "frame/1t/dpd/scale.hpp"
-#include "frame/1t/dpd/set.hpp"
-#include "frame/1t/dpd/shift.hpp"
-#include "frame/1t/indexed/scale.hpp"
-#include "frame/1t/indexed/set.hpp"
-#include "frame/1t/indexed/shift.hpp"
-#include "frame/1t/indexed_dpd/scale.hpp"
-#include "frame/1t/indexed_dpd/set.hpp"
-#include "frame/1t/indexed_dpd/shift.hpp"
+#include "tblis/frame/1t/dense/scale.hpp"
+#include "tblis/frame/1t/dense/set.hpp"
+#include "tblis/frame/1t/dense/shift.hpp"
+#include "tblis/frame/1t/dpd/scale.hpp"
+#include "tblis/frame/1t/dpd/set.hpp"
+#include "tblis/frame/1t/dpd/shift.hpp"
+#include "tblis/frame/1t/indexed/scale.hpp"
+#include "tblis/frame/1t/indexed/set.hpp"
+#include "tblis/frame/1t/indexed/shift.hpp"
+#include "tblis/frame/1t/indexed_dpd/scale.hpp"
+#include "tblis/frame/1t/indexed_dpd/set.hpp"
+#include "tblis/frame/1t/indexed_dpd/shift.hpp"
 
 namespace tblis
 {

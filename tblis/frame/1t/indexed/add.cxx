@@ -2,9 +2,9 @@
 #include "add.hpp"
 #include "scale.hpp"
 #include "set.hpp"
-#include "frame/1t/dense/add.hpp"
+#include "tblis/frame/1t/dense/add.hpp"
 
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/tensor.hpp"
 
 namespace tblis
 {

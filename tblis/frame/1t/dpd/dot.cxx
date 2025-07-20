@@ -1,6 +1,6 @@
 #include "util.hpp"
 #include "dot.hpp"
-#include "frame/1t/dense/dot.hpp"
+#include "tblis/frame/1t/dense/dot.hpp"
 
 namespace tblis
 {

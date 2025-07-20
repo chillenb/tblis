@@ -1,8 +1,8 @@
 #include "set.hpp"
 
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/tensor.hpp"
 
-#include "plugin/bli_plugin_tblis.h"
+#include "tblis/plugin/bli_plugin_tblis.h"
 
 namespace tblis
 {
@@ -13,6 +13,8 @@ void set(type_t type, const communicator& comm, const cntx_t* cntx,
          const len_vector& len_A,
          const scalar& alpha, char* A, const stride_vector& stride_A)
 {
+    bli_init_once();
+
     if (len_A.size() == 0)
     {
         alpha.to(A);

@@ -1,19 +1,19 @@
 #include "mult.hpp"
 
-#include "frame/base/tensor.hpp"
-#include "frame/base/block_scatter.hpp"
+#include "tblis/frame/base/tensor.hpp"
+#include "tblis/frame/base/block_scatter.hpp"
 
-#include "frame/0/add.hpp"
-#include "frame/0/mult.hpp"
-#include "frame/1t/dense/add.hpp"
-#include "frame/1t/dense/dot.hpp"
-#include "frame/1t/dense/scale.hpp"
-#include "frame/1t/dense/set.hpp"
+#include "tblis/frame/0/add.hpp"
+#include "tblis/frame/0/mult.hpp"
+#include "tblis/frame/1t/dense/add.hpp"
+#include "tblis/frame/1t/dense/dot.hpp"
+#include "tblis/frame/1t/dense/scale.hpp"
+#include "tblis/frame/1t/dense/set.hpp"
 
-#include "frame/1m/packm/packm_blk_bsmtc.hpp"
-#include "frame/3m/gemm/gemm_ker_bsmtc.hpp"
+#include "tblis/frame/1m/packm/packm_blk_bsmtc.hpp"
+#include "tblis/frame/3m/gemm/gemm_ker_bsmtc.hpp"
 
-#include "plugin/bli_plugin_tblis.h"
+#include "tblis/plugin/bli_plugin_tblis.h"
 
 #include <numeric>
 
@@ -912,6 +912,8 @@ void mult(type_t type, const communicator& comm, const cntx_t* cntx,
           const stride_vector& stride_C_BC,
           const stride_vector& stride_C_ABC)
 {
+    bli_init_once();
+
     const len_type ts = type_size[type];
     auto n_AB = stl_ext::prod(len_AB);
     auto n_AC = stl_ext::prod(len_AC);

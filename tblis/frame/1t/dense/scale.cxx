@@ -1,8 +1,8 @@
 #include "scale.hpp"
 
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/tensor.hpp"
 
-#include "plugin/bli_plugin_tblis.h"
+#include "tblis/plugin/bli_plugin_tblis.h"
 
 namespace tblis
 {
@@ -13,6 +13,8 @@ void scale(type_t type, const communicator& comm, const cntx_t* cntx,
            const len_vector& len_A, const scalar& alpha,
            bool conj_A, char* A, const stride_vector& stride_A)
 {
+    bli_init_once();
+
     bool empty = len_A.size() == 0;
 
     const len_type ts = type_size[type];

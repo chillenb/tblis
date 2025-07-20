@@ -1,14 +1,14 @@
 #ifndef _TBLIS_INTERNAL_1T_INDEXED_UTIL_HPP_
 #define _TBLIS_INTERNAL_1T_INDEXED_UTIL_HPP_
 
-#include "frame/base/thread.h"
-#include "frame/base/basic_types.h"
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/thread.h"
+#include "tblis/frame/base/basic_types.h"
+#include "tblis/frame/base/tensor.hpp"
 
 #include "marray/indexed/indexed_marray_view.hpp"
 
-#include "frame/1t/dense/add.hpp"
-#include "frame/3t/dpd/mult.hpp"
+#include "tblis/frame/1t/dense/add.hpp"
+#include "tblis/frame/3t/dpd/mult.hpp"
 
 namespace tblis
 {

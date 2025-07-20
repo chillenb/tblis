@@ -5,7 +5,7 @@
 
 #include "alignment.hpp"
 
-#include "frame/1t/dpd/util.hpp"
+#include "tblis/frame/1t/dpd/util.hpp"
 
 namespace tblis
 {

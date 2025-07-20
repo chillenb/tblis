@@ -1,10 +1,10 @@
 #include "mult.hpp"
-#include "frame/1t/indexed/scale.hpp"
-#include "frame/1t/indexed/set.hpp"
-#include "frame/1t/indexed/util.hpp"
-#include "frame/3t/dense/mult.hpp"
+#include "tblis/frame/1t/indexed/scale.hpp"
+#include "tblis/frame/1t/indexed/set.hpp"
+#include "tblis/frame/1t/indexed/util.hpp"
+#include "tblis/frame/3t/dense/mult.hpp"
 
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/tensor.hpp"
 
 namespace tblis
 {

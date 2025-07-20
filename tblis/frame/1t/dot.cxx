@@ -1,13 +1,13 @@
 #include "dot.h"
 
-#include "plugin/bli_plugin_tblis.h"
+#include "tblis/plugin/bli_plugin_tblis.h"
 
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/tensor.hpp"
 
-#include "frame/1t/dense/dot.hpp"
-#include "frame/1t/dpd/dot.hpp"
-#include "frame/1t/indexed/dot.hpp"
-#include "frame/1t/indexed_dpd/dot.hpp"
+#include "tblis/frame/1t/dense/dot.hpp"
+#include "tblis/frame/1t/dpd/dot.hpp"
+#include "tblis/frame/1t/indexed/dot.hpp"
+#include "tblis/frame/1t/indexed_dpd/dot.hpp"
 
 namespace tblis
 {

@@ -1,5 +1,5 @@
 #include "tensor.hpp"
-#include "plugin/bli_plugin_tblis.h"
+#include "tblis/plugin/bli_plugin_tblis.h"
 
 namespace tblis
 {

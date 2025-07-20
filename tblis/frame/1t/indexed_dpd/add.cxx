@@ -2,7 +2,7 @@
 #include "add.hpp"
 #include "set.hpp"
 #include "scale.hpp"
-#include "frame/1t/dense/add.hpp"
+#include "tblis/frame/1t/dense/add.hpp"
 
 namespace tblis
 {

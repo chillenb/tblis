@@ -1,7 +1,7 @@
 #include "block_scatter.hpp"
 #include "alignment.hpp"
 
-#include "plugin/bli_plugin_tblis.h"
+#include "tblis/plugin/bli_plugin_tblis.h"
 
 #include <numeric>
 

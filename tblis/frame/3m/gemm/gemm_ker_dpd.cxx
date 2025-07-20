@@ -1,9 +1,9 @@
 #include "gemm_ker_dpd.hpp"
 
-#include "plugin/bli_plugin_tblis.h"
+#include "tblis/plugin/bli_plugin_tblis.h"
 
-#include "frame/base/alignment.hpp"
-#include "frame/base/dpd_block_scatter.hpp"
+#include "tblis/frame/base/alignment.hpp"
+#include "tblis/frame/base/dpd_block_scatter.hpp"
 
 namespace tblis
 {

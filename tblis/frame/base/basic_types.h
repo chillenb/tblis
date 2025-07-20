@@ -14,7 +14,7 @@
 
 #ifndef TBLIS_ENABLE_CPLUSPLUS
 
-#if defined(cplusplus) && __cplusplus >= 202002L && !defined(BLIS_DISABLE_CPLUSPLUS)
+#if defined(__cplusplus) && __cplusplus >= 202002L && !defined(BLIS_DISABLE_CPLUSPLUS)
 #define TBLIS_ENABLE_CPLUSPLUS 1
 #else
 #define TBLIS_ENABLE_CPLUSPLUS 0
@@ -140,6 +140,285 @@ typedef TBLIS_LABEL_TYPE label_type;
     using scomplex = std::complex<float>;
     using dcomplex = std::complex<double>;
 
+    using std::complex;
+    using std::real;
+    using std::imag;
+
+    // The following is from stl_ext
+    // In the future stl_ext will be removed but these parts are still needed
+    // Tell stl_ext to not define them itself for now.
+    #define _STL_EXT_COMPLEX_HPP_
+
+    template <typename T> struct real_type             { typedef T type; };
+    template <typename T> struct real_type<complex<T>> { typedef T type; };
+    template <typename T>
+    using real_type_t = typename real_type<T>::type;
+
+    template <typename T> struct complex_type             { typedef complex<T> type; };
+    template <typename T> struct complex_type<complex<T>> { typedef complex<T> type; };
+    template <typename T>
+    using complex_type_t = typename complex_type<T>::type;
+
+    template <typename T> struct is_complex             : std::false_type {};
+    template <typename T> struct is_complex<complex<T>> :  std::true_type {};
+    template <typename T> constexpr static auto is_complex_v = is_complex<T>::value;
+
+    template <typename T>
+    std::enable_if_t<is_complex_v<T>,T> conj(T x)
+    {
+        return {x.real(), -x.imag()};
+    }
+
+    template <typename T>
+    std::enable_if_t<std::is_arithmetic_v<T>,T> conj(T x)
+    {
+        return x;
+    }
+
+    template <typename T>
+    T conj(bool conjugate, T val)
+    {
+        return (conjugate ? conj(val) : val);
+    }
+
+    template <typename T>
+    std::enable_if_t<is_complex_v<T>,real_type_t<T>> norm2(T x)
+    {
+        return x.real()*x.real() + x.imag()*x.imag();
+    }
+
+    template <typename T>
+    std::enable_if_t<std::is_arithmetic_v<T>,T> norm2(T x)
+    {
+        return x*x;
+    }
+
+
+TBLIS_END_NAMESPACE
+
+namespace std
+{
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                std::is_arithmetic_v<U> &&
+                !std::is_same<T,U>::value,complex<std::common_type_t<T,U>>>
+    operator+(const complex<T>& f, const std::complex<U>& d)
+    {
+        typedef std::common_type_t<T,U> V;
+        return complex<V>(f)+complex<V>(d);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                std::is_arithmetic_v<U> &&
+                !std::is_same<T,U>::value,complex<std::common_type_t<T,U>>>
+    operator+(const complex<T>& f, U d)
+    {
+        typedef std::common_type_t<T,U> V;
+        return complex<V>(f)+V(d);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                std::is_arithmetic_v<U> &&
+                !std::is_same<T,U>::value,complex<std::common_type_t<T,U>>>
+    operator+(T d, const complex<U>& f)
+    {
+        typedef std::common_type_t<T,U> V;
+        return V(d)+complex<V>(f);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                std::is_arithmetic_v<U> &&
+                !std::is_same<T,U>::value,complex<std::common_type_t<T,U>>>
+    operator-(const complex<T>& f, const std::complex<U>& d)
+    {
+        typedef std::common_type_t<T,U> V;
+        return complex<V>(f)-complex<V>(d);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                std::is_arithmetic_v<U> &&
+                !std::is_same<T,U>::value,complex<std::common_type_t<T,U>>>
+    operator-(const complex<T>& f, U d)
+    {
+        typedef std::common_type_t<T,U> V;
+        return complex<V>(f)-V(d);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                std::is_arithmetic_v<U> &&
+                !std::is_same<T,U>::value,complex<std::common_type_t<T,U>>>
+    operator-(T d, const complex<U>& f)
+    {
+        typedef std::common_type_t<T,U> V;
+        return V(d)-complex<V>(f);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                std::is_arithmetic_v<U> &&
+                !std::is_same<T,U>::value,complex<std::common_type_t<T,U>>>
+    operator*(const complex<T>& f, const std::complex<U>& d)
+    {
+        typedef std::common_type_t<T,U> V;
+        return complex<V>(f)*complex<V>(d);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                std::is_arithmetic_v<U> &&
+                !std::is_same<T,U>::value,complex<std::common_type_t<T,U>>>
+    operator*(const complex<T>& f, U d)
+    {
+        typedef std::common_type_t<T,U> V;
+        return complex<V>(f)*V(d);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                std::is_arithmetic_v<U> &&
+                !std::is_same<T,U>::value,complex<std::common_type_t<T,U>>>
+    operator*(T d, const complex<U>& f)
+    {
+        typedef std::common_type_t<T,U> V;
+        return V(d)*complex<V>(f);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                std::is_arithmetic_v<U> &&
+                !std::is_same<T,U>::value,complex<std::common_type_t<T,U>>>
+    operator/(const complex<T>& f, const std::complex<U>& d)
+    {
+        typedef std::common_type_t<T,U> V;
+        return complex<V>(f)/complex<V>(d);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                std::is_arithmetic_v<U> &&
+                !std::is_same<T,U>::value,complex<std::common_type_t<T,U>>>
+    operator/(const complex<T>& f, U d)
+    {
+        typedef std::common_type_t<T,U> V;
+        return complex<V>(f)/V(d);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                std::is_arithmetic_v<U> &&
+                !std::is_same<T,U>::value,complex<std::common_type_t<T,U>>>
+    operator/(T d, const complex<U>& f)
+    {
+        typedef std::common_type_t<T,U> V;
+        return V(d)/complex<V>(f);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                         std::is_arithmetic_v<U>,bool>
+    operator<(const complex<T>& a, const complex<U>& b)
+    {
+        return a.real() < b.real();
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                         std::is_arithmetic_v<U>,bool>
+    operator>(const complex<T>& a, const complex<U>& b)
+    {
+        return b < a;
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                         std::is_arithmetic_v<U>,bool>
+    operator<=(const complex<T>& a, const complex<U>& b)
+    {
+        return !(b < a);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                         std::is_arithmetic_v<U>,bool>
+    operator>=(const complex<T>& a, const complex<U>& b)
+    {
+        return !(a < b);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                         std::is_arithmetic_v<U>,bool>
+    operator<(const complex<T>& a, U b)
+    {
+        return a.real() < b;
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                         std::is_arithmetic_v<U>,bool>
+    operator>(const complex<T>& a, U b)
+    {
+        return b < a;
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                         std::is_arithmetic_v<U>,bool>
+    operator<=(const complex<T>& a, U b)
+    {
+        return !(b < a);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                         std::is_arithmetic_v<U>,bool>
+    operator>=(const complex<T>& a, U b)
+    {
+        return !(a < b);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                         std::is_arithmetic_v<U>,bool>
+    operator<(T a, const complex<U>& b)
+    {
+        return a < b.real();
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                         std::is_arithmetic_v<U>,bool>
+    operator>(T a, const complex<U>& b)
+    {
+        return b < a;
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                         std::is_arithmetic_v<U>,bool>
+    operator<=(T a, const complex<U>& b)
+    {
+        return !(b < a);
+    }
+
+    template <typename T, typename U>
+    std::enable_if_t<std::is_arithmetic_v<T> &&
+                         std::is_arithmetic_v<U>,bool>
+    operator>=(T a, const complex<U>& b)
+    {
+        return !(a < b);
+    }
+
+}
+
+TBLIS_BEGIN_NAMESPACE
+
     template <typename T> struct type_tag { static constexpr type_t value =   TYPE_DOUBLE; };
     template <> struct type_tag<   float> { static constexpr type_t value =    TYPE_FLOAT; };
     template <> struct type_tag<  double> { static constexpr type_t value =   TYPE_DOUBLE; };
@@ -166,26 +445,6 @@ typedef TBLIS_LABEL_TYPE label_type;
     {
         enum {MAT_A, MAT_B, MAT_C};
         enum {DIM_M, DIM_N, DIM_K};
-    }
-
-    TBLIS_END_NAMESPACE
-
-    #include "stl_ext/complex.hpp"
-
-    TBLIS_BEGIN_NAMESPACE
-
-    using stl_ext::real;
-    using stl_ext::imag;
-    using stl_ext::conj;
-    using stl_ext::real_type_t;
-    using stl_ext::complex_type_t;
-    using stl_ext::norm2;
-    using stl_ext::is_complex_v;
-
-    template <typename T>
-    T conj(bool conjugate, T val)
-    {
-        return (conjugate ? conj(val) : val);
     }
 
     #define DO_FOREACH_TYPE \

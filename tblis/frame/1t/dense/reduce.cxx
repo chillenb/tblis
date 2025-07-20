@@ -1,8 +1,8 @@
 #include "reduce.hpp"
 
-#include "frame/base/tensor.hpp"
+#include "tblis/frame/base/tensor.hpp"
 
-#include "plugin/bli_plugin_tblis.h"
+#include "tblis/plugin/bli_plugin_tblis.h"
 
 namespace tblis
 {
@@ -14,6 +14,8 @@ void reduce(type_t type, const communicator& comm, const cntx_t* cntx, reduce_t 
             const char* A, const stride_vector& stride_A,
             char* result, len_type& idx)
 {
+    bli_init_once();
+
     bool empty = len_A.size() == 0;
 
     const len_type ts = type_size[type];

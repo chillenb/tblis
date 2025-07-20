@@ -1,6 +1,6 @@
 #include "util.hpp"
 #include "shift.hpp"
-#include "frame/1t/dense/shift.hpp"
+#include "tblis/frame/1t/dense/shift.hpp"
 
 namespace tblis
 {
