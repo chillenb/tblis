@@ -13,6 +13,7 @@
 #include <cxxabi.h>
 #include <chrono>
 #include <list>
+#include <signal.h>
 
 #include "marray/marray.hpp"
 #include "marray/dpd/dpd_marray.hpp"

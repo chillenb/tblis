@@ -21,13 +21,14 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(CheckCompilerFlag)
 include(ConfigureWrapper)
-include(CheckIncludefile)
+include(CheckIncludeFile)
 include(CheckSymbolExists)
 include(CheckCSourceCompiles)
 include(CMakePackageConfigHelpers)
 include(CheckCCompilerFlag)
 include(FetchContent)
 include(ExternalProject)
+include(CheckLibraryExists)
 
 ###############################################################################
 #
@@ -138,9 +139,9 @@ endif()
 
 # Check if we need -lm
 check_symbol_exists(sqrt math.h HAVE_SQRT)
+check_library_exists(m sqrt "" HAVE_LIBM)
 if(NOT HAVE_SQRT)
-    check_library_exists(m sqrt "" HAVE_SQRT)
-    if (NOT HAVE_SQRT)
+    if (NOT HAVE_LIBM)
         message(FATAL_ERROR "no math library found.")
     else()
         list(APPEND PRIVATE_LIBS -lm)
@@ -149,9 +150,9 @@ endif()
 
 # Check if we need -lrt
 check_symbol_exists(clock_gettime time.h HAVE_CLOCK_GETTIME)
+check_library_exists(rt clock_gettime "" HAVE_LIBRT)
 if(NOT HAVE_CLOCK_GETTIME)
-    check_library_exists(rt clock_gettime "" HAVE_CLOCK_GETTIME)
-    if (NOT HAVE_CLOCK_GETTIME)
+    if (NOT HAVE_LIBRT)
         message(FATAL_ERROR "clock_gettime not found.")
     else()
         list(APPEND PRIVATE_LIBS -lrt)
