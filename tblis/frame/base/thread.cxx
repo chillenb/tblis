@@ -1,10 +1,6 @@
 #include "tblis.h"
 
-#include "plugin/bli_plugin_tblis.h"
-
-const tblis_comm* const tblis_single = tci_single;
-
-/*
+#include "tblis/plugin/bli_plugin_tblis.h"
 
 #if TBLIS_HAVE_SYSCTL
 #include <sys/types.h>
@@ -19,49 +15,81 @@ const tblis_comm* const tblis_single = tci_single;
 #include <hwloc.h>
 #endif
 
-#if TBLIS_HAVE_HWLOC_H
+const tblis_comm* const tblis_single = tci_single;
 
-hwloc_topology_t topo;
-hwloc_topology_init(&topo);
-hwloc_topology_load(topo);
-
-int depth = hwloc_get_cache_type_depth(topo, 1, HWLOC_OBJ_CACHE_DATA);
-if (depth != HWLOC_TYPE_DEPTH_UNKNOWN)
+namespace
 {
-    num_threads = hwloc_get_nbobjs_by_depth(topo, depth);
-    printf("nt: %d\n", num_threads);
+
+struct thread_configuration
+{
+    unsigned num_threads = 1;
+
+    thread_configuration()
+    {
+        const char* str = nullptr;
+
+        str = getenv("TBLIS_NUM_THREADS");
+        if (!str) str = getenv("BLIS_NUM_THREADS");
+        if (!str) str = getenv("OMP_NUM_THREADS");
+
+        if (str)
+        {
+            num_threads = strtol(str, NULL, 10);
+        }
+        else
+        {
+            #if TBLIS_HAVE_HWLOC_H
+
+            hwloc_topology_t topo;
+            hwloc_topology_init(&topo);
+            hwloc_topology_load(topo);
+
+            int depth = hwloc_get_cache_type_depth(topo, 1, HWLOC_OBJ_CACHE_DATA);
+            if (depth != HWLOC_TYPE_DEPTH_UNKNOWN)
+            {
+                num_threads = hwloc_get_nbobjs_by_depth(topo, depth);
+                printf("nt: %d\n", num_threads);
+            }
+
+            hwloc_topology_destroy(topo);
+
+            #elif TBLIS_HAVE_LSCPU
+
+            FILE *fd = popen("lscpu --parse=core | grep '^[0-9]' | sort -rn | head -n 1", "r");
+
+            std::string s;
+            int c;
+            while ((c = fgetc(fd)) != EOF) s.push_back(c+1);
+
+            pclose(fd);
+
+            num_threads = strtol(s.c_str(), NULL, 10);
+
+            #elif TBLIS_HAVE_SYSCTLBYNAME
+
+            size_t len = sizeof(num_threads);
+            sysctlbyname("hw.physicalcpu", &num_threads, &len, NULL, 0);
+
+            #elif TBLIS_HAVE_SYSCONF && TBLIS_HAVE__SC_NPROCESSORS_ONLN
+
+            num_threads = sysconf(_SC_NPROCESSORS_ONLN);
+
+            #elif TBLIS_HAVE_SYSCONF && TBLIS_HAVE__SC_NPROCESSORS_CONF
+
+            num_threads = sysconf(_SC_NPROCESSORS_CONF);
+
+            #endif
+        }
+    }
+};
+
+thread_configuration& get_thread_configuration()
+{
+    static thread_configuration cfg;
+    return cfg;
 }
 
-hwloc_topology_destroy(topo);
-
-#elif TBLIS_HAVE_LSCPU
-
-FILE *fd = popen("lscpu --parse=core | grep '^[0-9]' | sort -rn | head -n 1", "r");
-
-std::string s;
-int c;
-while ((c = fgetc(fd)) != EOF) s.push_back(c+1);
-
-pclose(fd);
-
-num_threads = strtol(s.c_str(), NULL, 10);
-
-#elif TBLIS_HAVE_SYSCTLBYNAME
-
-size_t len = sizeof(num_threads);
-sysctlbyname("hw.physicalcpu", &num_threads, &len, NULL, 0);
-
-#elif TBLIS_HAVE_SYSCONF && TBLIS_HAVE__SC_NPROCESSORS_ONLN
-
-num_threads = sysconf(_SC_NPROCESSORS_ONLN);
-
-#elif TBLIS_HAVE_SYSCONF && TBLIS_HAVE__SC_NPROCESSORS_CONF
-
-num_threads = sysconf(_SC_NPROCESSORS_CONF);
-
-#endif
-
-*/
+}
 
 namespace tblis
 {
@@ -93,8 +121,7 @@ void thread_blis(const communicator& comm,
     if (comm.master())
     {
         array = bli_sba_checkout_array(comm.num_threads());
-        // BLIS_OPENMP is safe because it uses atomic operations for barriers etc.
-        gl_comm = bli_thrcomm_create(BLIS_OPENMP, nullptr, comm.num_threads());
+        gl_comm = bli_thrcomm_create(bli_thread_get_thread_impl(), nullptr, comm.num_threads());
     }
 
     comm.broadcast(
@@ -128,11 +155,11 @@ void thread_blis(const communicator& comm,
 TBLIS_EXPORT
 unsigned tblis_get_num_threads()
 {
-    return bli_thread_get_num_threads();
+    return get_thread_configuration().num_threads;
 }
 
 TBLIS_EXPORT
 void tblis_set_num_threads(unsigned num_threads)
 {
-    bli_thread_set_num_threads(num_threads);
+    get_thread_configuration().num_threads = num_threads;
 }
