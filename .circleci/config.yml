@@ -154,7 +154,7 @@ jobs:
                 git remote add origin git@github.com:flame/blis
                 git fetch --depth=1 origin $(cat $SRC_DIR/blis-git-tag)
                 git checkout FETCH_HEAD
-                ./configure --prefix=$(pwd)/usr --disable-shared --enable-static -t$(THREADING) auto
+                ./configure --prefix=$(pwd)/usr --disable-shared --enable-static -t$THREADING auto
                 make -j4 install
                 CONFIG_ARGS="$CONFIG_ARGS --with-blis-dir=$(pwd)/usr"
                 cd $BUILD_DIR
@@ -181,5 +181,5 @@ jobs:
             fi
 
             if [ $TEST_INSTALL -eq 1 ]; then
-                $CXX -o test_install $SRC_DIR/test/test_install.cxx -I$BUILD_DIR/usr/include -I$BUILD_DIR/usr/lib -ltblis
+                $CXX -std=c++20 -o test_install $SRC_DIR/test/test_install.cxx -I$BUILD_DIR/usr/include -I$BUILD_DIR/usr/lib -ltblis
             fi
