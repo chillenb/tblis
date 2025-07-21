@@ -470,7 +470,6 @@ if (ENABLE_SHARED)
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
         $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>
     )
-    target_link_options(tblis PRIVATE -fsanitize=address)
 endif()
 
 if (ENABLE_STATIC)
