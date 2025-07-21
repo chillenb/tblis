@@ -41,7 +41,7 @@ workflows:
       - build:
           CC: clang
           THREADING: openmp
-          PACKAGES: 'clang'
+          PACKAGES: 'clang libomp-dev'
       - build:
           OS: macos
           CC: clang

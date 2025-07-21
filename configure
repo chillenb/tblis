@@ -650,6 +650,7 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+enable_tests
 enable_static
 enable_shared
 enable_memkind
@@ -1282,6 +1283,7 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-static         Enable building tests.
   --enable-static         Enable building a static library.
   --disable-static        Disable building a shared library.
   --enable-memkind        Enable use of the memkind library for MCDRAM
@@ -1752,6 +1754,19 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+# Check whether --enable-tests was given.
+if test ${enable_tests+y}
+then :
+  enableval=$enable_tests; test "x${enable_tests}" = "xno" &&
+    ax_cv_cmake_flags="$ax_cv_cmake_flags -DENABLE_TESTS=OFF" ||
+    ax_cv_cmake_flags="$ax_cv_cmake_flags -DENABLE_TESTS=ON"
+fi
+
+
+
+
+
+
 # Check whether --enable-static was given.
 if test ${enable_static+y}
 then :
@@ -1898,5 +1913,4 @@ PKG_CONFIG_PATH="${BLIS_PREFIX}${PKG_CONFIG_PATH}" CMAKE_PREFIX_PATH="${BLIS_PRE
 	$ax_cv_cmake_flags \
 	 \
     $srcdir
-
 
