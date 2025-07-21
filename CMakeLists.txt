@@ -219,7 +219,7 @@ check_symbol_exists(_SC_NPROCESSORS_CONF unistd.h TBLIS_HAVE__SC_NPROCESSORS_CON
 check_symbol_exists(_SC_NPROCESSORS_ONLN unistd.h TBLIS_HAVE__SC_NPROCESSORS_ONLN)
 
 # Find make
-find_program(MAKE_EXECUTABLE NAMES gmake make mingw32-make REQUIRED)
+find_program(MAKE_EXECUTABLE NAMES make gmake mingw32-make REQUIRED)
 
 set(ENABLE_SHARED_OLD ${ENABLE_SHARED})
 set(ENABLE_STATIC_OLD ${ENABLE_STATIC})
@@ -287,6 +287,7 @@ if (BLIS_POPULATED)
         OUTPUT
             ${BLIS_INSTALL_DIR}/lib/libblis.a
             ${BLIS_INSTALL_DIR}/include/blis/blis.h
+        COMMENT "Building BLIS"
         WORKING_DIRECTORY ${BLIS_BINARY_DIR}
     )
     add_custom_target(blis-install

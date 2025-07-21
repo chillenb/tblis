@@ -1,7 +1,9 @@
 #ifndef _TBLIS_PLUGIN_PLUGIN_HPP_
 #define _TBLIS_PLUGIN_PLUGIN_HPP_
 
+#ifdef __clang__
 #pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
+#endif
 
 #include "tblis.h"
 
