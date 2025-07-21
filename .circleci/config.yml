@@ -41,7 +41,7 @@ workflows:
       - build:
           CC: clang
           THREADING: openmp
-          PACKAGES: 'llvm'
+          PACKAGES: 'clang'
       - build:
           OS: macos
           CC: clang
@@ -106,7 +106,7 @@ jobs:
             - run:
                 name: Installing Dependencies
                 command:
-                  brew install catch2 cmake << parameters.PACKAGES >>
+                  brew install cmake << parameters.PACKAGES >>
 
       - run:
           name: Configuring, Building, Testing
