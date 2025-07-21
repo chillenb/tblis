@@ -155,7 +155,7 @@ jobs:
                 git fetch --depth=1 origin $(cat $DIST_PATH/blis-git-tag)
                 git checkout FETCH_HEAD
                 ./configure --prefix=$(pwd)/usr --disable-shared --enable-static -tauto auto
-                make -j2 install
+                make -j1 install --debug=bv
                 CONFIG_ARGS="$CONFIG_ARGS --with-blis-dir=$(pwd)/usr"
                 cd $BUILD_DIR
             fi
@@ -168,10 +168,10 @@ jobs:
             $CC --version
             $CC -v
 
-            make V=1 -j2 --debug=bv
+            make V=1 VERBOSE=1
             make install
 
-            export OMP_NUM_THREADS=2
+            export OMP_NUM_THREADS=2 -j1
             bin/test
 
             if [ $TEST_INSTALL -eq 1 ]; then
