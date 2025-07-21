@@ -37,7 +37,7 @@ workflows:
 
       - build:
           OOT: 1
-          THREADING: openmp
+          THREADING: pthread
       - build:
           CC: clang
           THREADING: openmp
@@ -45,15 +45,15 @@ workflows:
       - build:
           OS: macos
           CC: clang
-          THREADING: dispatch
+          #THREADING: dispatch
       - build:
-          THREADING: pthread
+          THREADING: openmp
           BLIS: external
-      - build:
-          THREADING: tbb
-          PACKAGES: 'libtbb-dev'
-      - build:
-          THREADING: none
+      #- build:
+      #    THREADING: tbb
+      #    PACKAGES: 'libtbb-dev'
+      #- build:
+      #    THREADING: none
 
 jobs:
   build:
@@ -154,7 +154,7 @@ jobs:
                 git remote add origin git@github.com:flame/blis
                 git fetch --depth=1 origin $(cat $SRC_DIR/blis-git-tag)
                 git checkout FETCH_HEAD
-                ./configure --prefix=$(pwd)/usr --disable-shared --enable-static -tauto auto
+                ./configure --prefix=$(pwd)/usr --disable-shared --enable-static -t$(THREADING) auto
                 make -j4 install
                 CONFIG_ARGS="$CONFIG_ARGS --with-blis-dir=$(pwd)/usr"
                 cd $BUILD_DIR

@@ -276,7 +276,7 @@ if (BLIS_POPULATED)
                 ${BLIS_DEBUG_FLAG}
                 --disable-blas
                 --disable-cblas
-                --enable-threading=auto
+                "--enable-threading=pthread"
                 ${BLIS_CONFIG_FAMILY}
         )
         file(MAKE_DIRECTORY ${BLIS_INSTALL_DIR}/include/blis)
