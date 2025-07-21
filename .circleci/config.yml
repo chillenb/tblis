@@ -15,8 +15,7 @@ executors:
       - image: cimg/base:current-24.04
   macos: &macos-executor # macos executor running Xcode
     macos:
-      xcode: 16.4.0
-    resource_class: m2pro.medium
+      xcode: 16.2.0
   linuxvm: # executor type
     machine:
       image: ubuntu-2404:current
@@ -169,7 +168,7 @@ jobs:
             $CC --version
             $CC -v
 
-            make V=1 -j2
+            make V=1 -j2 --debug=bv
             make install
 
             export OMP_NUM_THREADS=2
