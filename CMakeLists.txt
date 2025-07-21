@@ -283,7 +283,7 @@ if (BLIS_POPULATED)
     endif()
 
     add_custom_command(
-        COMMAND ${MAKE_EXECUTABLE} install
+        COMMAND ${MAKE_EXECUTABLE} install -d -r
         OUTPUT
             ${BLIS_INSTALL_DIR}/lib/libblis.a
             ${BLIS_INSTALL_DIR}/include/blis/blis.h
