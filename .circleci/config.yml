@@ -15,7 +15,8 @@ executors:
       - image: cimg/base:current-24.04
   macos: &macos-executor # macos executor running Xcode
     macos:
-      xcode: 14.2.0
+      xcode: 16.4.0
+    resource_class: m2pro.medium
   linuxvm: # executor type
     machine:
       image: ubuntu-2404:current
