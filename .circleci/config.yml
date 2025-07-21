@@ -113,7 +113,7 @@ jobs:
           command: |
             git submodule update --init --recursive
 
-            export DIST_PATH=$(pwd)
+            export SRC_DIR=$(pwd)
             export CC="<< parameters.CC >>"
             export OOT="<< parameters.OOT >>"
             export BUILD_CONFIG="<< parameters.BUILD_CONFIG >>"
@@ -128,7 +128,7 @@ jobs:
             esac
 
             pwd
-            if [ $OOT -eq 1 ]; then mkdir ../oot; cd ../oot; chmod -R a-w $DIST_PATH; fi
+            if [ $OOT -eq 1 ]; then mkdir ../oot; cd ../oot; chmod -R a-w $SRC_DIR; fi
             pwd
 
             BUILD_DIR=$(pwd)
@@ -143,24 +143,24 @@ jobs:
             echo "TEST_INSTALL      = $TEST_INSTALL"
             echo "BLIS              = $BLIS"
             echo "BUILD_DIR         = $BUILD_DIR"
-            echo "DIST_PATH         = $DIST_PATH"
+            echo "SRC_DIR           = $SRC_DIR"
 
-            CONFIG_ARGS="--prefix=$DIST_PATH/install --enable-threading=$THREADING CC=$CC CXX=$CXX --with-blis-config-family=$BUILD_CONFIG"
+            CONFIG_ARGS="--prefix=$SRC_DIR/install --enable-threading=$THREADING CC=$CC CXX=$CXX --with-blis-config-family=$BUILD_CONFIG"
 
             if [ $BLIS = external ]; then
                 mkdir ../blis
                 cd ../blis
                 git init
                 git remote add origin git@github.com:flame/blis
-                git fetch --depth=1 origin $(cat $DIST_PATH/blis-git-tag)
+                git fetch --depth=1 origin $(cat $SRC_DIR/blis-git-tag)
                 git checkout FETCH_HEAD
                 ./configure --prefix=$(pwd)/usr --disable-shared --enable-static -tauto auto
-                make -j1 install -d -r -p
+                make -j4 install
                 CONFIG_ARGS="$CONFIG_ARGS --with-blis-dir=$(pwd)/usr"
                 cd $BUILD_DIR
             fi
 
-            CONFIGURE="$DIST_PATH/configure $CONFIG_ARGS"
+            CONFIGURE="$SRC_DIR/configure $CONFIG_ARGS"
             echo "Running $CONFIGURE"
             $CONFIGURE
             pwd
@@ -168,12 +168,12 @@ jobs:
             $CC --version
             $CC -v
 
-            make V=1 VERBOSE=1
+            make V=1 VERBOSE=1 -j4
             make install
 
-            export OMP_NUM_THREADS=2 -j1
+            export OMP_NUM_THREADS=2
             bin/test
 
             if [ $TEST_INSTALL -eq 1 ]; then
-                $CXX -o test_install $DIST_PATH/test/test_install.cxx -I$DIST_PATH/install/include -I$DIST_PATH/install/lib -ltblis
+                $CXX -o test_install $SRC_DIR/test/test_install.cxx -I$SRC_DIR/install/include -I$SRC_DIR/install/lib -ltblis
             fi
