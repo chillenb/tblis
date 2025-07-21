@@ -160,6 +160,10 @@ jobs:
                 cd $BUILD_DIR
             fi
 
+            if [ $RUN_TESTS -eq 1 ]; then
+                CONFIG_ARGS="$CONFIG_ARGS --enable-tests"
+            fi
+
             CONFIGURE="$SRC_DIR/configure $CONFIG_ARGS"
             echo "Running $CONFIGURE"
             $CONFIGURE
@@ -171,8 +175,10 @@ jobs:
             make V=1 VERBOSE=1 -j4
             make install
 
-            export OMP_NUM_THREADS=2
-            bin/test
+            if [ $RUN_TESTS -eq 1 ]; then
+                export OMP_NUM_THREADS=2
+                bin/test
+            fi
 
             if [ $TEST_INSTALL -eq 1 ]; then
                 $CXX -o test_install $SRC_DIR/test/test_install.cxx -I$BUILD_DIR/usr/include -I$BUILD_DIR/usr/lib -ltblis
