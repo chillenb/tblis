@@ -41,6 +41,7 @@ workflows:
       - build:
           CC: clang
           THREADING: openmp
+          PACKAGES: 'llvm'
       - build:
           OS: macos
           CC: clang
@@ -97,6 +98,15 @@ jobs:
                 name: Installing Dependencies
                 command:
                   sudo apt-get update && sudo NEEDRESTART_MODE=a apt-get install -y catch2 cmake make python3 << parameters.PACKAGES >>
+
+      - when:
+          condition:
+            equal: [ *macos-executor, << parameters.OS >> ]
+          steps:
+            - run:
+                name: Installing Dependencies
+                command:
+                  brew install catch2 cmake << parameters.PACKAGES >>
 
       - run:
           name: Configuring, Building, Testing
