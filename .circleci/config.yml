@@ -145,7 +145,7 @@ jobs:
             echo "BUILD_DIR         = $BUILD_DIR"
             echo "SRC_DIR           = $SRC_DIR"
 
-            CONFIG_ARGS="--prefix=$SRC_DIR/install --enable-threading=$THREADING CC=$CC CXX=$CXX --with-blis-config-family=$BUILD_CONFIG"
+            CONFIG_ARGS="--prefix=$BUILD_DIR/usr --enable-threading=$THREADING CC=$CC CXX=$CXX --with-blis-config-family=$BUILD_CONFIG"
 
             if [ $BLIS = external ]; then
                 mkdir ../blis
@@ -175,5 +175,5 @@ jobs:
             bin/test
 
             if [ $TEST_INSTALL -eq 1 ]; then
-                $CXX -o test_install $SRC_DIR/test/test_install.cxx -I$SRC_DIR/install/include -I$SRC_DIR/install/lib -ltblis
+                $CXX -o test_install $SRC_DIR/test/test_install.cxx -I$BUILD_DIR/usr/include -I$BUILD_DIR/usr/lib -ltblis
             fi
