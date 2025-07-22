@@ -34,10 +34,12 @@ workflows:
       #     BUILD_CONFIG: auto
       #     PACKAGES: ''
       #     BLIS: download
+      #     COMPAT: 0
 
       - build:
           OOT: 1
           THREADING: pthread
+          COMPAT: 1
       - build:
           CC: clang
           THREADING: openmp
@@ -49,6 +51,10 @@ workflows:
       - build:
           THREADING: openmp
           BLIS: external
+      - build:
+          THREADING: openmp
+          CC: nvc
+          PACKAGES: 'nvhpc-25-7'
       #- build:
       #    THREADING: tbb
       #    PACKAGES: 'libtbb-dev'
@@ -58,6 +64,9 @@ workflows:
 jobs:
   build:
     parameters:
+      COMPAT:
+        type: integer
+        default: 0
       OS:
         type: executor
         default: linux
@@ -96,8 +105,13 @@ jobs:
           steps:
             - run:
                 name: Installing Dependencies
-                command:
-                  sudo apt-get update && sudo NEEDRESTART_MODE=a apt-get install -y catch2 cmake make python3 << parameters.PACKAGES >>
+                command: |
+                  export CC="<< parameters.CC >>"
+                  if [ $CC = nvc ]; then
+                    curl https://developer.download.nvidia.com/hpc-sdk/ubuntu/DEB-GPG-KEY-NVIDIA-HPC-SDK | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-hpcsdk-archive-keyring.gpg
+                    echo 'deb [signed-by=/usr/share/keyrings/nvidia-hpcsdk-archive-keyring.gpg] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | sudo tee /etc/apt/sources.list.d/nvhpc.list
+                  fi
+                  sudo apt-get update -y && sudo NEEDRESTART_MODE=a apt-get install -y catch2 cmake make python3 << parameters.PACKAGES >>
 
       - when:
           condition:
@@ -121,6 +135,7 @@ jobs:
             export RUN_TESTS="<< parameters.RUN_TESTS >>"
             export TEST_INSTALL="<< parameters.TEST_INSTALL >>"
             export BLIS="<< parameters.BLIS >>"
+            export COMPAT="<< parameters.COMPAT >>"
 
             case $CC in
                 gcc) export CXX=g++;;
@@ -144,6 +159,7 @@ jobs:
             echo "BLIS              = $BLIS"
             echo "BUILD_DIR         = $BUILD_DIR"
             echo "SRC_DIR           = $SRC_DIR"
+            echo "COMPAT            = $COMPAT"
 
             CONFIG_ARGS="--prefix=$BUILD_DIR/usr --enable-threading=$THREADING CC=$CC CXX=$CXX --with-blis-config-family=$BUILD_CONFIG"
 
@@ -162,6 +178,10 @@ jobs:
 
             if [ $RUN_TESTS -eq 1 ]; then
                 CONFIG_ARGS="$CONFIG_ARGS --enable-tests"
+            fi
+
+            if [ $COMPAT -eq 1 ]; then
+                CONFIG_ARGS="$CONFIG_ARGS --enable-compat"
             fi
 
             CONFIGURE="$SRC_DIR/configure $CONFIG_ARGS"
