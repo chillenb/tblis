@@ -151,37 +151,36 @@ endif()
 
 # Check if we need -lm
 check_symbol_exists(sqrt math.h HAVE_SQRT)
-check_library_exists(m sqrt "" HAVE_LIBM)
+find_library(HAVE_LIBM m)
 if(NOT HAVE_SQRT)
     if (NOT HAVE_LIBM)
         message(FATAL_ERROR "no math library found.")
     else()
-        list(APPEND PRIVATE_LIBS -lm)
+        list(APPEND PRIVATE_LIBS ${HAVE_LIBM})
     endif()
 endif()
 
 # Check if we need -lrt
 check_symbol_exists(clock_gettime time.h HAVE_CLOCK_GETTIME)
-check_library_exists(rt clock_gettime "" HAVE_LIBRT)
+find_library(HAVE_LIBRT rt)
 if(NOT HAVE_CLOCK_GETTIME)
     if (NOT HAVE_LIBRT)
         message(FATAL_ERROR "clock_gettime not found.")
     else()
-        list(APPEND PRIVATE_LIBS -lrt)
+        list(APPEND PRIVATE_LIBS ${HAVE_LIBRT})
     endif()
 endif()
 
 # Check for openmp simd flag
+set(OMP_SIMD_FLAG "")
 check_compiler_flag(CXX -fopenmp-simd HAVE_FOPENMP_SIMD)
 if(HAVE_FOPENMP_SIMD)
-    list(APPEND CMAKE_CXX_FLAGS -fopenmp-simd)
-    list(APPEND CMAKE_C_FLAGS -fopenmp-simd)
+    set(OMP_SIMD_FLAG -fopenmp-simd)
 endif()
 
 check_compiler_flag(CXX -qopenmp-simd HAVE_QOPENMP_SIMD)
 if(HAVE_QOPENMP_SIMD AND NOT HAVE_FOPENMP_SIMD)
-    list(APPEND CMAKE_CXX_FLAGS -qopenmp-simd)
-    list(APPEND CMAKE_C_FLAGS -qopenmp-simd)
+    set(OMP_SIMD_FLAG -qopenmp-simd)
 endif()
 
 # Check for memkind
@@ -340,8 +339,8 @@ add_custom_command(
     COMMAND ${BLIS_INSTALL_DIR}/share/blis/configure-plugin
         CC=${CMAKE_C_COMPILER}
         CXX=${CMAKE_CXX_COMPILER}
-        CFLAGS="${PLUGIN_FLAGS}"
-        CXXFLAGS="${PLUGIN_FLAGS} -std=c++20"
+        CFLAGS="${PLUGIN_FLAGS} ${OMP_SIMD_FLAG}"
+        CXXFLAGS="${PLUGIN_FLAGS} ${OMP_SIMD_FLAG} -std=c++20"
         ${BLIS_DEBUG_FLAG}
         -f --build
         --path=${CMAKE_CURRENT_SOURCE_DIR}/tblis/plugin
@@ -453,7 +452,7 @@ set_target_properties(tblis-objects PROPERTIES
     CXX_EXTENSIONS OFF
 )
 target_compile_options(tblis-objects
-    PRIVATE -Wno-return-type-c-linkage -DMARRAY_ENABLE_ASSERTS -DTBLIS_DEBUG
+  PRIVATE -Wno-return-type-c-linkage -DMARRAY_ENABLE_ASSERTS -DTBLIS_DEBUG ${OMP_SIMD_FLAG}
 )
 add_dependencies(tblis-objects plugin-build)
 
