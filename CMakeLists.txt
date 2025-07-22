@@ -24,6 +24,7 @@ include(ConfigureWrapper)
 include(CheckIncludeFile)
 include(CheckSymbolExists)
 include(CheckCSourceCompiles)
+include(CheckCXXSourceCompiles)
 include(CMakePackageConfigHelpers)
 include(CheckCCompilerFlag)
 include(FetchContent)
@@ -151,6 +152,51 @@ if(APPLE)
 else()
     set(RESTRICT "__restrict")
 endif()
+
+# Check for bit operations
+check_cxx_source_compiles("
+    int main()
+    {
+        // Test bitset builtin functions
+        auto x = 42u;
+        auto xl = 42ul;
+        auto xll = 42ull;
+        __builtin_popcount(x);
+        __builtin_popcountl(xl);
+        __builtin_popcountll(xll);
+        __builtin_clz(x);
+        __builtin_clzl(xl);
+        __builtin_clzll(xll);
+        __builtin_ctz(x);
+        __builtin_ctzl(xl);
+        __builtin_ctzll(xll);
+        return 0;
+    }"
+    TBLIS_HAVE_GCC_BITSET_BUILTINS
+)
+set(CMAKE_REQUIRED_FLAGS -std=c++20)
+check_cxx_source_compiles("
+    #include <bit>
+    int main()
+    {
+        // Test C++20 bitset functions
+        auto x = 42u;
+        auto xl = 42ul;
+        auto xll = 42ull;
+        std::popcount(x);
+        std::popcount(xl);
+        std::popcount(xll);
+        std::countl_zero(x);
+        std::countl_zero(xl);
+        std::countl_zero(xll);
+        std::countr_zero(x);
+        std::countr_zero(xl);
+        std::countr_zero(xll);
+        return 0;
+    }"
+    TBLIS_HAVE_CXX20_BITSET
+)
+unset(CMAKE_REQUIRED_FLAGS)
 
 # Check if we need -lm
 check_symbol_exists(sqrt math.h HAVE_SQRT)

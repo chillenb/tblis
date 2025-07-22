@@ -8,22 +8,65 @@
 
 #include "basic_types.h"
 
+#if defined(TBLIS_HAVE_GCC_BITSET_BUILTINS)
+
+template <typename T>
+int countr_zero(T x)
+{
+    if constexpr (sizeof(T) == sizeof(unsigned long long))
+    {
+        return __builtin_ctzll(static_cast<unsigned long long>(x));
+    }
+    else if constexpr (sizeof(T) == sizeof(unsigned long))
+    {
+        return __builtin_ctzll(static_cast<unsigned long>(x));
+    }
+    else
+    {
+        return __builtin_ctzll(static_cast<unsigned>(x));
+    }
+}
+
+#elif defined(TBLIS_HAVE_CXX20_BITSET)
+
+#include <bit>
+
+template <typename T>
+int countr_zero(T x)
+{
+    return std::countr_zero(static_cast<std::make_unsigned_t<T>>(x));
+}
+
+#else
+
+template <typename T>
+int countr_zero(T x_)
+{
+    auto x = static_cast<std::make_unsigned_t<T>>(x_);
+    auto i = 0;
+    for (auto b = 1;i < sizeof(x)*CHAR_BIT;i++, b <<= 1)
+        if (x & b) return i;
+    return i;
+}
+
+#endif
+
 namespace tblis
 {
 
 template <typename T>
-T gcd(T a, T b)
+T gcd(T a_, T b_)
 {
-    a = std::abs(a);
-    b = std::abs(b);
+    auto a = static_cast<std::make_unsigned_t<T>>(std::abs(a_));
+    auto b = static_cast<std::make_unsigned_t<T>>(std::abs(b_));
 
     if (a == 0) return b;
     if (b == 0) return a;
 
-    unsigned d = __builtin_ctzl(a|b);
+    unsigned d = countr_zero(a|b);
 
-    a >>= __builtin_ctzl(a);
-    b >>= __builtin_ctzl(b);
+    a >>= countr_zero(a);
+    b >>= countr_zero(b);
 
     while (a != b)
     {

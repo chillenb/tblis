@@ -1,6 +1,50 @@
 #include "block_scatter.hpp"
 #include "dpd_block_scatter.hpp"
 
+#if defined(TBLIS_HAVE_GCC_BITSET_BUILTINS)
+
+template <typename T>
+int popcount(T x)
+{
+    if constexpr (sizeof(T) == sizeof(unsigned long long))
+    {
+        return __builtin_popcountll(static_cast<unsigned long long>(x));
+    }
+    else if constexpr (sizeof(T) == sizeof(unsigned long))
+    {
+        return __builtin_popcountl(static_cast<unsigned long>(x));
+    }
+    else
+    {
+        return __builtin_popcount(static_cast<unsigned>(x));
+    }
+}
+
+#elif defined(TBLIS_HAVE_CXX20_BITSET)
+
+#include <bit>
+
+template <typename T>
+int popcount(T x)
+{
+    return std::popcount(static_cast<std::make_unsigned_t<T>>(x));
+}
+
+#else
+
+template <typename T>
+int popcount(T x_)
+{
+    auto x = static_cast<std::make_unsigned_t<T>>(x_);
+    auto i = 0;
+    auto c = 0;
+    for (auto i = 0, b = 1;i < sizeof(x)*CHAR_BIT;i++, b <<= 1)
+        if (x & b) c++;
+    return c;
+}
+
+#endif
+
 namespace tblis
 {
 
@@ -106,7 +150,7 @@ char* fill_block_scatter(len_type ts, bool fill, const dpd_params& params,
 {
     const auto nirrep = params.tensor->num_irreps();
     const int irrep_mask = nirrep - 1;
-    const int irrep_bits = __builtin_popcount(irrep_mask);
+    const int irrep_bits = popcount(irrep_mask);
 
     irrep_vector irreps(params.tensor->dimension());
 
