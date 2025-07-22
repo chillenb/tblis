@@ -22,10 +22,10 @@ void tblis_tensor_add(const tblis_comm* comm,
 inline
 void add(const communicator& comm,
          const scalar& alpha,
-         const tensor& A_,
+         const tensor_wrapper& A_,
          const label_vector& idx_A,
          const scalar& beta,
-               tensor&& B,
+               tensor_wrapper&& B,
          const label_vector& idx_B)
 {
     auto A(A_);
@@ -37,9 +37,9 @@ void add(const communicator& comm,
 inline
 void add(const communicator& comm,
          const scalar& alpha,
-         const tensor& A,
+         const tensor_wrapper& A,
          const label_vector& idx_A,
-               tensor&& B,
+               tensor_wrapper&& B,
          const label_vector& idx_B)
 {
     add(comm, alpha, A, idx_A, {0.0, A.type}, std::move(B), idx_B);
@@ -47,10 +47,10 @@ void add(const communicator& comm,
 
 inline
 void add(const communicator& comm,
-         const tensor& A,
+         const tensor_wrapper& A,
          const label_vector& idx_A,
          const scalar& beta,
-               tensor&& B,
+               tensor_wrapper&& B,
          const label_vector& idx_B)
 {
     add(comm, {1.0, A.type}, A, idx_A, beta, std::move(B), idx_B);
@@ -58,9 +58,9 @@ void add(const communicator& comm,
 
 inline
 void add(const communicator& comm,
-         const tensor& A,
+         const tensor_wrapper& A,
          const label_vector& idx_A,
-               tensor&& B,
+               tensor_wrapper&& B,
          const label_vector& idx_B)
 {
     add(comm, {1.0, A.type}, A, idx_A, {0.0, A.type}, std::move(B), idx_B);
@@ -69,9 +69,9 @@ void add(const communicator& comm,
 inline
 void add(const communicator& comm,
          const scalar& alpha,
-         const tensor& A,
+         const tensor_wrapper& A,
          const scalar& beta,
-               tensor&& B)
+               tensor_wrapper&& B)
 {
     add(comm, alpha, A, idx(A), beta, std::move(B), idx(B));
 }
@@ -79,35 +79,35 @@ void add(const communicator& comm,
 inline
 void add(const communicator& comm,
          const scalar& alpha,
-         const tensor& A,
-               tensor&& B)
+         const tensor_wrapper& A,
+               tensor_wrapper&& B)
 {
     add(comm, alpha, A, {0.0, A.type}, std::move(B));
 }
 
 inline
 void add(const communicator& comm,
-         const tensor& A,
+         const tensor_wrapper& A,
          const scalar& beta,
-               tensor&& B)
+               tensor_wrapper&& B)
 {
     add(comm, {1.0, A.type}, A, beta, std::move(B));
 }
 
 inline
 void add(const communicator& comm,
-         const tensor& A,
-               tensor&& B)
+         const tensor_wrapper& A,
+               tensor_wrapper&& B)
 {
     add(comm, {1.0, A.type}, A, {0.0, A.type}, std::move(B));
 }
 
-inline
+TBLIS_COMPAT_INLINE
 void add(const scalar& alpha,
-         const tensor& A,
+         const tensor_wrapper& A,
          const label_vector& idx_A,
          const scalar& beta,
-               tensor&& B,
+               tensor_wrapper&& B,
          const label_vector& idx_B)
 {
     add(*(communicator*)nullptr, alpha, A, idx_A, beta, std::move(B), idx_B);
@@ -115,28 +115,28 @@ void add(const scalar& alpha,
 
 inline
 void add(const scalar& alpha,
-         const tensor& A,
+         const tensor_wrapper& A,
          const label_vector& idx_A,
-               tensor&& B,
+               tensor_wrapper&& B,
          const label_vector& idx_B)
 {
     add(alpha, A, idx_A, {0.0, A.type}, std::move(B), idx_B);
 }
 
 inline
-void add(const tensor& A,
+void add(const tensor_wrapper& A,
          const label_vector& idx_A,
          const scalar& beta,
-               tensor&& B,
+               tensor_wrapper&& B,
          const label_vector& idx_B)
 {
     add({1.0, A.type}, A, idx_A, beta, std::move(B), idx_B);
 }
 
 inline
-void add(const tensor& A,
+void add(const tensor_wrapper& A,
          const label_vector& idx_A,
-               tensor&& B,
+               tensor_wrapper&& B,
          const label_vector& idx_B)
 {
     add({1.0, A.type}, A, idx_A, {0.0, A.type}, std::move(B), idx_B);
@@ -144,32 +144,32 @@ void add(const tensor& A,
 
 inline
 void add(const scalar& alpha,
-         const tensor& A,
+         const tensor_wrapper& A,
          const scalar& beta,
-               tensor&& B)
+               tensor_wrapper&& B)
 {
     add(alpha, A, idx(A), beta, std::move(B), idx(B));
 }
 
 inline
 void add(const scalar& alpha,
-         const tensor& A,
-               tensor&& B)
+         const tensor_wrapper& A,
+               tensor_wrapper&& B)
 {
     add(alpha, A, {0.0, A.type}, std::move(B));
 }
 
 inline
-void add(const tensor& A,
+void add(const tensor_wrapper& A,
          const scalar& beta,
-               tensor&& B)
+               tensor_wrapper&& B)
 {
     add({1.0, A.type}, A, beta, std::move(B));
 }
 
 inline
-void add(const tensor& A,
-               tensor&& B)
+void add(const tensor_wrapper& A,
+               tensor_wrapper&& B)
 {
     add({1.0, A.type}, A, {0.0, A.type}, std::move(B));
 }

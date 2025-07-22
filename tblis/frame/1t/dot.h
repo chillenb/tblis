@@ -22,9 +22,9 @@ void tblis_tensor_dot(const tblis_comm* comm,
 
 inline
 void dot(const communicator& comm,
-         const tensor& A,
+         const tensor_wrapper& A,
          const label_vector& idx_A,
-         const tensor& B,
+         const tensor_wrapper& B,
          const label_vector& idx_B,
          tblis_scalar& result)
 {
@@ -33,9 +33,9 @@ void dot(const communicator& comm,
 
 template <typename T>
 void dot(const communicator& comm,
-         const tensor& A,
+         const tensor_wrapper& A,
          const label_vector& idx_A,
-         const tensor& B,
+         const tensor_wrapper& B,
          const label_vector& idx_B,
          T& result)
 {
@@ -46,9 +46,9 @@ void dot(const communicator& comm,
 
 inline
 tblis_scalar dot(const communicator& comm,
-                 const tensor& A,
+                 const tensor_wrapper& A,
                  const label_vector& idx_A,
-                 const tensor& B,
+                 const tensor_wrapper& B,
                  const label_vector& idx_B)
 {
     tblis_scalar result(0.0, A.type);
@@ -58,9 +58,9 @@ tblis_scalar dot(const communicator& comm,
 
 template <typename T>
 T dot(const communicator& comm,
-      const tensor& A,
+      const tensor_wrapper& A,
       const label_vector& idx_A,
-      const tensor& B,
+      const tensor_wrapper& B,
       const label_vector& idx_B)
 {
     T result;
@@ -70,8 +70,8 @@ T dot(const communicator& comm,
 
 inline
 void dot(const communicator& comm,
-         const tensor& A,
-         const tensor& B,
+         const tensor_wrapper& A,
+         const tensor_wrapper& B,
          tblis_scalar& result)
 {
     dot(comm, A, idx(A), B, idx(B), result);
@@ -79,8 +79,8 @@ void dot(const communicator& comm,
 
 template <typename T>
 void dot(const communicator& comm,
-         const tensor& A,
-         const tensor& B,
+         const tensor_wrapper& A,
+         const tensor_wrapper& B,
          T& result)
 {
     tblis_scalar result_(0.0, A.type);
@@ -90,8 +90,8 @@ void dot(const communicator& comm,
 
 inline
 tblis_scalar dot(const communicator& comm,
-                 const tensor& A,
-                 const tensor& B)
+                 const tensor_wrapper& A,
+                 const tensor_wrapper& B)
 {
     tblis_scalar result(0.0, A.type);
     dot(comm, A, B, result);
@@ -100,8 +100,8 @@ tblis_scalar dot(const communicator& comm,
 
 template <typename T>
 T dot(const communicator& comm,
-      const tensor& A,
-      const tensor& B)
+      const tensor_wrapper& A,
+      const tensor_wrapper& B)
 {
     T result;
     dot(comm, A, B, result);
@@ -109,9 +109,9 @@ T dot(const communicator& comm,
 }
 
 inline
-void dot(const tensor& A,
+void dot(const tensor_wrapper& A,
          const label_vector& idx_A,
-         const tensor& B,
+         const tensor_wrapper& B,
          const label_vector& idx_B,
          tblis_scalar& result)
 {
@@ -119,9 +119,9 @@ void dot(const tensor& A,
 }
 
 template <typename T>
-void dot(const tensor& A,
+void dot(const tensor_wrapper& A,
          const label_vector& idx_A,
-         const tensor& B,
+         const tensor_wrapper& B,
          const label_vector& idx_B,
          T& result)
 {
@@ -131,9 +131,9 @@ void dot(const tensor& A,
 }
 
 inline
-tblis_scalar dot(const tensor& A,
+tblis_scalar dot(const tensor_wrapper& A,
                  const label_vector& idx_A,
-                 const tensor& B,
+                 const tensor_wrapper& B,
                  const label_vector& idx_B)
 {
     tblis_scalar result(0.0, A.type);
@@ -142,9 +142,9 @@ tblis_scalar dot(const tensor& A,
 }
 
 template <typename T>
-T dot(const tensor& A,
+T dot(const tensor_wrapper& A,
       const label_vector& idx_A,
-      const tensor& B,
+      const tensor_wrapper& B,
       const label_vector& idx_B)
 {
     T result;
@@ -153,16 +153,16 @@ T dot(const tensor& A,
 }
 
 inline
-void dot(const tensor& A,
-         const tensor& B,
+void dot(const tensor_wrapper& A,
+         const tensor_wrapper& B,
          tblis_scalar& result)
 {
     dot(A, idx(A), B, idx(B), result);
 }
 
 template <typename T>
-void dot(const tensor& A,
-         const tensor& B,
+void dot(const tensor_wrapper& A,
+         const tensor_wrapper& B,
          T& result)
 {
     tblis_scalar result_(0.0, A.type);
@@ -171,8 +171,8 @@ void dot(const tensor& A,
 }
 
 inline
-tblis_scalar dot(const tensor& A,
-                 const tensor& B)
+tblis_scalar dot(const tensor_wrapper& A,
+                 const tensor_wrapper& B)
 {
     tblis_scalar result(0.0, A.type);
     dot(A, B, result);
@@ -180,8 +180,8 @@ tblis_scalar dot(const tensor& A,
 }
 
 template <typename T>
-T dot(const tensor& A,
-      const tensor& B)
+T dot(const tensor_wrapper& A,
+      const tensor_wrapper& B)
 {
     T result;
     dot(A, B, result);

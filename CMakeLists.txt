@@ -50,9 +50,12 @@ endif()
 
 option(ENABLE_TESTS "Build tests" OFF)
 
-option(ENABLE_SHARED "build a shared library" ON)
+option(ENABLE_SHARED "Build a shared library" ON)
 
-option(ENABLE_STATIC "build a static library" ON)
+option(ENABLE_STATIC "Build a static library" ON)
+
+option(ENABLE_COMPAT "Enable compatibility with the TBLIS 1.x interface" OFF)
+set(TBLIS_ENABLE_COMPAT ${ENABLE_COMPAT})
 
 option(ENABLE_MEMKIND OFF "Enable use of the memkind library for MCDRAM allocation if supported.")
 

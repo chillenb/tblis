@@ -6,6 +6,8 @@
 #define TBLIS_VERSION_PATCH   0
 #define TBLIS_VERSION         "@TBLIS_VERSION@"
 
+#cmakedefine TBLIS_ENABLE_COMPAT
+
 #cmakedefine TBLIS_HAVE_HWLOC_H 1
 
 #cmakedefine TBLIS_HAVE_HWLOC_H 1

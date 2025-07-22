@@ -21,7 +21,7 @@ void tblis_tensor_scale(const tblis_comm* comm,
 inline
 void scale(const communicator& comm,
            const scalar& alpha,
-                 tensor&& A,
+                 tensor_wrapper&& A,
            const label_vector& idx_A)
 {
     A.scalar *= alpha.convert(A.type);
@@ -30,7 +30,7 @@ void scale(const communicator& comm,
 
 inline
 void scale(const communicator& comm,
-                 tensor&& A,
+                 tensor_wrapper&& A,
            const label_vector& idx_A)
 {
     scale(comm, {1.0, A.type}, std::move(A), idx_A);
@@ -39,28 +39,28 @@ void scale(const communicator& comm,
 inline
 void scale(const communicator& comm,
            const scalar& alpha,
-                 tensor&& A)
+                 tensor_wrapper&& A)
 {
     scale(comm, alpha, std::move(A), idx(A));
 }
 
 inline
 void scale(const communicator& comm,
-                 tensor&& A)
+                 tensor_wrapper&& A)
 {
     scale(comm, {1.0, A.type}, std::move(A));
 }
 
-inline
+TBLIS_COMPAT_INLINE
 void scale(const scalar& alpha,
-                 tensor&& A,
+                 tensor_wrapper&& A,
            const label_vector& idx_A)
 {
     scale(*(communicator*)nullptr, alpha, std::move(A), idx_A);
 }
 
 inline
-void scale(      tensor&& A,
+void scale(      tensor_wrapper&& A,
            const label_vector& idx_A)
 {
     scale({1.0, A.type}, std::move(A), idx_A);
@@ -68,13 +68,13 @@ void scale(      tensor&& A,
 
 inline
 void scale(const scalar& alpha,
-                 tensor&& A)
+                 tensor_wrapper&& A)
 {
     scale(alpha, std::move(A), idx(A));
 }
 
 inline
-void scale(      tensor&& A)
+void scale(      tensor_wrapper&& A)
 {
     scale({1.0, A.type}, std::move(A));
 }

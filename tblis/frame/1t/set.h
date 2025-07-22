@@ -21,7 +21,7 @@ void tblis_tensor_set(const tblis_comm* comm,
 inline
 void set(const communicator& comm,
          const scalar& alpha_,
-               tensor&& A,
+               tensor_wrapper&& A,
          const label_vector& idx_A)
 {
     auto alpha = alpha_.convert(A.type);
@@ -31,14 +31,14 @@ void set(const communicator& comm,
 inline
 void set(const communicator& comm,
          const scalar& alpha,
-               tensor&& A)
+               tensor_wrapper&& A)
 {
     set(comm, alpha, std::move(A), idx(A));
 }
 
-inline
+TBLIS_COMPAT_INLINE
 void set(const scalar& alpha,
-               tensor&& A,
+               tensor_wrapper&& A,
          const label_vector& idx_A)
 {
     set(*(communicator*)nullptr, alpha, std::move(A), idx_A);
@@ -46,7 +46,7 @@ void set(const scalar& alpha,
 
 inline
 void set(const scalar& alpha,
-               tensor&& A)
+               tensor_wrapper&& A)
 {
     set(alpha, std::move(A), idx(A));
 }

@@ -12,6 +12,8 @@ AX_CMAKE_OPTION([static], AS_HELP_STRING([--enable-static], [Enable building a s
 
 AX_CMAKE_OPTION([shared], AS_HELP_STRING([--disable-static], [Disable building a shared library.]))
 
+AX_CMAKE_OPTION([compat], AS_HELP_STRING([--enable-compat], [Maintain compatibility with the TBLIS 1.x interface.]))
+
 AX_CMAKE_OPTION([memkind], AS_HELP_STRING([--enable-memkind], [Enable use of the memkind library for MCDRAM allocation if supported.]))
 
 AX_CMAKE_OPTION([hwloc], AS_HELP_STRING([--disable-hwloc], [Disable use of the hwloc library.]))

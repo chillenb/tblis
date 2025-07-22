@@ -996,20 +996,16 @@ using label_vector = internal::label_vector_helper<label_type>::type;
 using len_vector = MArray::short_vector<len_type,MARRAY_OPT_NDIM>;
 using stride_vector = MArray::short_vector<stride_type,MARRAY_OPT_NDIM>;
 
-#if !defined(TBLIS_DONT_USE_CXX11)
+struct config;
 
-    struct config;
+using MArray::detail::ipow;
 
-    using MArray::detail::ipow;
-
-    template <int N=1>
-    using viterator = MArray::index_iterator<MArray::DYNAMIC, N>;
-
-#endif
+template <int N=1>
+using viterator = MArray::index_iterator<MArray::DYNAMIC, N>;
 
 using scalar = tblis_scalar;
 
-struct tensor : tblis_tensor
+struct tensor_wrapper : tblis_tensor
 {
     len_vector len_buf;
     stride_vector stride_buf;
@@ -1017,12 +1013,12 @@ struct tensor : tblis_tensor
 #if defined(MARRAY_MARRAY_BASE_HPP)
 
     template <typename T, int N, typename D, bool O>
-    tensor(const MArray::marray_base<T,N,D,O>& t)
+    tensor_wrapper(const MArray::marray_base<T,N,D,O>& t)
     : tblis_tensor(t.data(), t.dimension(),
                    t.lengths().data(), t.strides().data()) {}
 
     template <typename T, int N, typename D, bool O>
-    tensor(MArray::marray_base<T,N,D,O>&& t)
+    tensor_wrapper(MArray::marray_base<T,N,D,O>&& t)
     : tblis_tensor(t.data(), N, nullptr, nullptr)
     {
         len_buf.assign(t.lengths().begin(), t.lengths().end());
@@ -1036,14 +1032,14 @@ struct tensor : tblis_tensor
 #if defined(MARRAY_MARRAY_SLICE_HPP)
 
     template <typename T, int N, int I, typename... D>
-    tensor(const MArray::marray_slice<T,N,I,D...>& t) : tensor(t.view()) {}
+    tensor_wrapper(const MArray::marray_slice<T,N,I,D...>& t) : tensor_wrapper(t.view()) {}
 
 #endif
 
 #if defined(EIGEN_CXX11_TENSOR_TENSOR_H)
 
     template <typename T, int N, int O, typename I>
-    tensor(const Eigen::Tensor<T,N,O,I>& t)
+    tensor_wrapper(const Eigen::Tensor<T,N,O,I>& t)
     : tblis_tensor(t.data(), N, nullptr, nullptr)
     {
         auto dims = t.dimensions();
@@ -1058,7 +1054,7 @@ struct tensor : tblis_tensor
 #if defined(EIGEN_CXX11_TENSOR_TENSOR_FIXED_SIZE_H)
 
     template <typename T, typename D, int O, typename I>
-    tensor(const Eigen::TensorFixedSize<T,D,O,I>& t)
+    tensor_wrapper(const Eigen::TensorFixedSize<T,D,O,I>& t)
     : tblis_tensor(t.data(), t.NumIndices, nullptr, nullptr)
     {
         auto dims = t.dimensions();
@@ -1073,7 +1069,7 @@ struct tensor : tblis_tensor
 #if defined(EIGEN_CXX11_TENSOR_TENSOR_MAP_H)
 
     template <typename Tensor, int O, template <class> class MP>
-    tensor(const Eigen::TensorMap<Tensor,O,MP>& t)
+    tensor_wrapper(const Eigen::TensorMap<Tensor,O,MP>& t)
     : tblis_tensor(t.data(), t.NumIndices, nullptr, nullptr)
     {
         auto dims = t.dimensions();
@@ -1095,6 +1091,26 @@ inline label_vector idx(const tblis_tensor& A, label_vector&& = label_vector())
 label_vector idx(const std::string& from, label_vector&& to = label_vector());
 
 }
+
+#ifdef TBLIS_ENABLE_COMPAT
+
+#include <marray/marray.hpp>
+#include <memory>
+
+TBLIS_BEGIN_NAMESPACE
+
+template <typename T, typename Allocator=std::allocator<T>>
+using tensor = MArray::marray<T, MArray::DYNAMIC, Allocator>;
+
+TBLIS_END_NAMESPACE
+
+#define TBLIS_COMPAT_INLINE template <typename T_=void>
+
+#else //TBLIS_ENABLE_COMPAT
+
+#define TBLIS_COMPAT_INLINE inline
+
+#endif //TBLIS_ENABLE_COMPAT
 
 #endif //TBLIS_ENABLE_CPLUSPLUS
 

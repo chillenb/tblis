@@ -20,12 +20,12 @@ void tblis_tensor_mult(const tblis_comm* comm, const tblis_config* cntx,
 inline
 void mult(const communicator& comm,
           const scalar& alpha,
-          const tensor& A,
+          const tensor_wrapper& A,
           const label_vector& idx_A,
-          const tensor& B,
+          const tensor_wrapper& B,
           const label_vector& idx_B,
           const scalar& beta,
-          const tensor& C,
+          const tensor_wrapper& C,
           const label_vector& idx_C)
 {
     auto A_(A);
@@ -39,12 +39,12 @@ void mult(const communicator& comm,
 
 inline
 void mult(const communicator& comm,
-          const tensor& A,
+          const tensor_wrapper& A,
           const label_vector& idx_A,
-          const tensor& B,
+          const tensor_wrapper& B,
           const label_vector& idx_B,
           const scalar& beta,
-          const tensor& C,
+          const tensor_wrapper& C,
           const label_vector& idx_C)
 {
     mult(comm, {1.0, A.type}, A, idx_A, B, idx_B, beta, C, idx_C);
@@ -53,11 +53,11 @@ void mult(const communicator& comm,
 inline
 void mult(const communicator& comm,
           const scalar& alpha,
-          const tensor& A,
+          const tensor_wrapper& A,
           const label_vector& idx_A,
-          const tensor& B,
+          const tensor_wrapper& B,
           const label_vector& idx_B,
-          const tensor& C,
+          const tensor_wrapper& C,
           const label_vector& idx_C)
 {
     mult(comm, alpha, A, idx_A, B, idx_B, {0.0, A.type}, C, idx_C);
@@ -65,11 +65,11 @@ void mult(const communicator& comm,
 
 inline
 void mult(const communicator& comm,
-          const tensor& A,
+          const tensor_wrapper& A,
           const label_vector& idx_A,
-          const tensor& B,
+          const tensor_wrapper& B,
           const label_vector& idx_B,
-          const tensor& C,
+          const tensor_wrapper& C,
           const label_vector& idx_C)
 {
     mult(comm, {1.0, A.type}, A, idx_A, B, idx_B, {0.0, A.type}, C, idx_C);
@@ -78,10 +78,10 @@ void mult(const communicator& comm,
 inline
 void mult(const communicator& comm,
           const scalar& alpha,
-          const tensor& A,
-          const tensor& B,
+          const tensor_wrapper& A,
+          const tensor_wrapper& B,
           const scalar& beta,
-          const tensor& C)
+          const tensor_wrapper& C)
 {
     label_vector idx_A, idx_B, idx_C;
 
@@ -103,10 +103,10 @@ void mult(const communicator& comm,
 
 inline
 void mult(const communicator& comm,
-          const tensor& A,
-          const tensor& B,
+          const tensor_wrapper& A,
+          const tensor_wrapper& B,
           const scalar& beta,
-          const tensor& C)
+          const tensor_wrapper& C)
 {
     mult(comm, {1.0, A.type}, A, B, beta, C);
 }
@@ -114,42 +114,42 @@ void mult(const communicator& comm,
 inline
 void mult(const communicator& comm,
           const scalar& alpha,
-          const tensor& A,
-          const tensor& B,
-          const tensor& C)
+          const tensor_wrapper& A,
+          const tensor_wrapper& B,
+          const tensor_wrapper& C)
 {
     mult(comm, alpha, A, B, {0.0, A.type}, C);
 }
 
 inline
 void mult(const communicator& comm,
-          const tensor& A,
-          const tensor& B,
-          const tensor& C)
+          const tensor_wrapper& A,
+          const tensor_wrapper& B,
+          const tensor_wrapper& C)
 {
     mult(comm, {1.0, A.type}, A, B, {0.0, A.type}, C);
 }
 
-inline
+TBLIS_COMPAT_INLINE
 void mult(const scalar& alpha,
-          const tensor& A,
+          const tensor_wrapper& A,
           const label_vector& idx_A,
-          const tensor& B,
+          const tensor_wrapper& B,
           const label_vector& idx_B,
           const scalar& beta,
-          const tensor& C,
+          const tensor_wrapper& C,
           const label_vector& idx_C)
 {
     mult(*(communicator*)nullptr, alpha, A, idx_A, B, idx_B, beta, C, idx_C);
 }
 
 inline
-void mult(const tensor& A,
+void mult(const tensor_wrapper& A,
           const label_vector& idx_A,
-          const tensor& B,
+          const tensor_wrapper& B,
           const label_vector& idx_B,
           const scalar& beta,
-          const tensor& C,
+          const tensor_wrapper& C,
           const label_vector& idx_C)
 {
     mult({1.0, A.type}, A, idx_A, B, idx_B, beta, C, idx_C);
@@ -157,22 +157,22 @@ void mult(const tensor& A,
 
 inline
 void mult(const scalar& alpha,
-          const tensor& A,
+          const tensor_wrapper& A,
           const label_vector& idx_A,
-          const tensor& B,
+          const tensor_wrapper& B,
           const label_vector& idx_B,
-          const tensor& C,
+          const tensor_wrapper& C,
           const label_vector& idx_C)
 {
     mult(alpha, A, idx_A, B, idx_B, {0.0, A.type}, C, idx_C);
 }
 
 inline
-void mult(const tensor& A,
+void mult(const tensor_wrapper& A,
           const label_vector& idx_A,
-          const tensor& B,
+          const tensor_wrapper& B,
           const label_vector& idx_B,
-          const tensor& C,
+          const tensor_wrapper& C,
           const label_vector& idx_C)
 {
     mult({1.0, A.type}, A, idx_A, B, idx_B, {0.0, A.type}, C, idx_C);
@@ -180,36 +180,36 @@ void mult(const tensor& A,
 
 inline
 void mult(const scalar& alpha,
-          const tensor& A,
-          const tensor& B,
+          const tensor_wrapper& A,
+          const tensor_wrapper& B,
           const scalar& beta,
-          const tensor& C)
+          const tensor_wrapper& C)
 {
     mult(*(communicator*)nullptr, alpha, A, B, beta, C);
 }
 
 inline
-void mult(const tensor& A,
-          const tensor& B,
+void mult(const tensor_wrapper& A,
+          const tensor_wrapper& B,
           const scalar& beta,
-          const tensor& C)
+          const tensor_wrapper& C)
 {
     mult({1.0, A.type}, A, B, beta, C);
 }
 
 inline
 void mult(const scalar& alpha,
-          const tensor& A,
-          const tensor& B,
-          const tensor& C)
+          const tensor_wrapper& A,
+          const tensor_wrapper& B,
+          const tensor_wrapper& C)
 {
     mult(alpha, A, B, {0.0, A.type}, C);
 }
 
 inline
-void mult(const tensor& A,
-          const tensor& B,
-          const tensor& C)
+void mult(const tensor_wrapper& A,
+          const tensor_wrapper& B,
+          const tensor_wrapper& C)
 {
     mult({1.0, A.type}, A, B, {0.0, A.type}, C);
 }

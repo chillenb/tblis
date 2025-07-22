@@ -22,7 +22,7 @@ inline
 void shift(const communicator& comm,
            const scalar& alpha_,
            const scalar& beta,
-                 tensor&& A,
+                 tensor_wrapper&& A,
            const label_vector& idx_A)
 {
     auto alpha = alpha_.convert(A.type);
@@ -33,7 +33,7 @@ void shift(const communicator& comm,
 inline
 void shift(const communicator& comm,
            const scalar& alpha,
-                 tensor&& A,
+                 tensor_wrapper&& A,
            const label_vector& idx_A)
 {
     shift(comm, alpha, {1.0, A.type}, std::move(A), idx_A);
@@ -43,7 +43,7 @@ inline
 void shift(const communicator& comm,
            const scalar& alpha,
            const scalar& beta,
-                 tensor&& A)
+                 tensor_wrapper&& A)
 {
     shift(comm, alpha, beta, std::move(A), idx(A));
 }
@@ -51,15 +51,15 @@ void shift(const communicator& comm,
 inline
 void shift(const communicator& comm,
            const scalar& alpha,
-                 tensor&& A)
+                 tensor_wrapper&& A)
 {
     shift(comm, alpha, {1.0, A.type}, std::move(A));
 }
 
-inline
+TBLIS_COMPAT_INLINE
 void shift(const scalar& alpha,
            const scalar& beta,
-                 tensor&& A,
+                 tensor_wrapper&& A,
            const label_vector& idx_A)
 {
     shift(*(communicator*)nullptr, alpha, beta, std::move(A), idx_A);
@@ -67,7 +67,7 @@ void shift(const scalar& alpha,
 
 inline
 void shift(const scalar& alpha,
-                 tensor&& A,
+                 tensor_wrapper&& A,
            const label_vector& idx_A)
 {
     shift(alpha, {1.0, A.type}, std::move(A), idx_A);
@@ -76,14 +76,14 @@ void shift(const scalar& alpha,
 inline
 void shift(const scalar& alpha,
            const scalar& beta,
-                 tensor&& A)
+                 tensor_wrapper&& A)
 {
     shift(alpha, beta, std::move(A), idx(A));
 }
 
 inline
 void shift(const scalar& alpha,
-                 tensor&& A)
+                 tensor_wrapper&& A)
 {
     shift(alpha, {1.0, A.type}, std::move(A));
 }

@@ -48,7 +48,7 @@ struct reduce_result<scalar>
 inline
 void reduce(const communicator& comm,
             reduce_t op,
-            const tensor& A,
+            const tensor_wrapper& A,
             const label_vector& idx_A,
             scalar& result,
             len_type& idx)
@@ -59,7 +59,7 @@ void reduce(const communicator& comm,
 template <typename T>
 void reduce(const communicator& comm,
             reduce_t op,
-            const tensor& A,
+            const tensor_wrapper& A,
             const label_vector& idx_A,
             T& result,
             len_type& idx)
@@ -72,7 +72,7 @@ void reduce(const communicator& comm,
 template <typename T=scalar>
 reduce_result<T> reduce(const communicator& comm,
                         reduce_t op,
-                        const tensor& A,
+                        const tensor_wrapper& A,
                         const label_vector& idx_A)
 {
     reduce_result<T> result(A.type);
@@ -83,7 +83,7 @@ reduce_result<T> reduce(const communicator& comm,
 inline
 void reduce(const communicator& comm,
             reduce_t op,
-            const tensor& A,
+            const tensor_wrapper& A,
             scalar& result,
             len_type& idx)
 {
@@ -93,7 +93,7 @@ void reduce(const communicator& comm,
 template <typename T>
 void reduce(const communicator& comm,
             reduce_t op,
-            const tensor& A,
+            const tensor_wrapper& A,
             T& result,
             len_type& idx)
 {
@@ -105,7 +105,7 @@ void reduce(const communicator& comm,
 template <typename T=scalar>
 reduce_result<T> reduce(const communicator& comm,
                         reduce_t op,
-                        const tensor& A)
+                        const tensor_wrapper& A)
 {
     reduce_result<T> result(A.type);
     reduce(comm, op, A, result.value, result.idx);
@@ -114,7 +114,7 @@ reduce_result<T> reduce(const communicator& comm,
 
 inline
 void reduce(reduce_t op,
-            const tensor& A,
+            const tensor_wrapper& A,
             const label_vector& idx_A,
             scalar& result,
             len_type& idx)
@@ -124,7 +124,7 @@ void reduce(reduce_t op,
 
 template <typename T>
 void reduce(reduce_t op,
-            const tensor& A,
+            const tensor_wrapper& A,
             const label_vector& idx_A,
             T& result,
             len_type& idx)
@@ -136,7 +136,7 @@ void reduce(reduce_t op,
 
 template <typename T=scalar>
 reduce_result<T> reduce(reduce_t op,
-                        const tensor& A,
+                        const tensor_wrapper& A,
                         const label_vector& idx_A)
 {
     reduce_result<T> result(A.type);
@@ -146,7 +146,7 @@ reduce_result<T> reduce(reduce_t op,
 
 inline
 void reduce(reduce_t op,
-            const tensor& A,
+            const tensor_wrapper& A,
             scalar& result,
             len_type& idx)
 {
@@ -155,7 +155,7 @@ void reduce(reduce_t op,
 
 template <typename T>
 void reduce(reduce_t op,
-            const tensor& A,
+            const tensor_wrapper& A,
             T& result,
             len_type& idx)
 {
@@ -165,7 +165,7 @@ void reduce(reduce_t op,
 }
 
 template <typename T=scalar>
-reduce_result<T> reduce(reduce_t op, const tensor& A)
+reduce_result<T> reduce(reduce_t op, const tensor_wrapper& A)
 {
     reduce_result<T> result(A.type);
     reduce(op, A, result.value, result.idx);
@@ -372,13 +372,13 @@ inline auto name(const communicator& comm, const Tensor& t, Args&&... args) \
 } \
 \
 template <typename... Args> \
-inline auto name(const tensor& t, Args&&... args) \
+inline auto name(const tensor_wrapper& t, Args&&... args) \
 { \
     return reduce(op, t, std::forward<Args>(args)...)which; \
 } \
 \
 template <typename... Args> \
-inline auto name(const communicator& comm, const tensor& t, Args&&... args) \
+inline auto name(const communicator& comm, const tensor_wrapper& t, Args&&... args) \
 { \
     return reduce(comm, op, t, std::forward<Args>(args)...)which; \
 }
