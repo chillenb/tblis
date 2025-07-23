@@ -653,6 +653,7 @@ enable_option_checking
 enable_tests
 enable_static
 enable_shared
+enable_compat
 enable_memkind
 enable_hwloc
 enable_threading
@@ -1283,9 +1284,10 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-static         Enable building tests.
+  --enable-tests          Enable building tests.
   --enable-static         Enable building a static library.
   --disable-static        Disable building a shared library.
+  --enable-compat         Maintain compatibility with the TBLIS 1.x interface.
   --enable-memkind        Enable use of the memkind library for MCDRAM
                           allocation if supported.
   --disable-hwloc         Disable use of the hwloc library.
@@ -1793,6 +1795,19 @@ fi
 
 
 
+# Check whether --enable-compat was given.
+if test ${enable_compat+y}
+then :
+  enableval=$enable_compat; test "x${enable_compat}" = "xno" &&
+    ax_cv_cmake_flags="$ax_cv_cmake_flags -DENABLE_COMPAT=OFF" ||
+    ax_cv_cmake_flags="$ax_cv_cmake_flags -DENABLE_COMPAT=ON"
+fi
+
+
+
+
+
+
 # Check whether --enable-memkind was given.
 if test ${enable_memkind+y}
 then :
@@ -1887,7 +1902,10 @@ fi
 
 test -z $CC || ax_cv_cmake_flags="$ax_cv_cmake_flags -DCMAKE_C_COMPILER=$CC"
 test -z $CXX || ax_cv_cmake_flags="$ax_cv_cmake_flags -DCMAKE_CXX_COMPILER=$CXX"
-PKG_CONFIG_PATH="${BLIS_PREFIX}${PKG_CONFIG_PATH}" CMAKE_PREFIX_PATH="${BLIS_PREFIX}${CMAKE_PREFIX_PATH}" cmake \
+if test $exec_prefix = NONE; then
+	exec_prefix=$prefix
+fi
+CMAKE_COMMAND="PKG_CONFIG_PATH="${BLIS_PREFIX}${PKG_CONFIG_PATH}" CMAKE_PREFIX_PATH="${BLIS_PREFIX}${CMAKE_PREFIX_PATH}" cmake \
 	-DCMAKE_INSTALL_PREFIX=$prefix \
 	-DINSTALL_PREFIX=$prefix \
 	-DINSTALL_EXEC_PREFIX=$exec_prefix \
@@ -1912,5 +1930,10 @@ PKG_CONFIG_PATH="${BLIS_PREFIX}${PKG_CONFIG_PATH}" CMAKE_PREFIX_PATH="${BLIS_PRE
 	-DINSTALL_PSDIR=$psdir \
 	$ax_cv_cmake_flags \
 	 \
-    $srcdir
+    $srcdir"
+CMAKE_COMMAND=$(eval echo $CMAKE_COMMAND)
+CMAKE_COMMAND=$(eval echo $CMAKE_COMMAND)
+CMAKE_COMMAND=$(eval echo $CMAKE_COMMAND)
+CMAKE_COMMAND=$(eval echo $CMAKE_COMMAND)
+eval $CMAKE_COMMAND
 

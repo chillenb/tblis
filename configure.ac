@@ -6,7 +6,7 @@ AC_INIT(TBLIS,
 
 AC_CONFIG_MACRO_DIR([cmake])
 
-AX_CMAKE_OPTION([tests], AS_HELP_STRING([--enable-static], [Enable building tests.]))
+AX_CMAKE_OPTION([tests], AS_HELP_STRING([--enable-tests], [Enable building tests.]))
 
 AX_CMAKE_OPTION([static], AS_HELP_STRING([--enable-static], [Enable building a static library.]))
 

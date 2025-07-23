@@ -185,7 +185,10 @@ _AX_CMAKE_WITH([$1], [$2], m4_translit([with_$1], [-+.], [___]), m4_translit([$1
 AC_DEFUN([AX_CMAKE], [
 test -z $CC || ax_cv_cmake_flags="$ax_cv_cmake_flags -DCMAKE_C_COMPILER=$CC"
 test -z $CXX || ax_cv_cmake_flags="$ax_cv_cmake_flags -DCMAKE_CXX_COMPILER=$CXX"
-$2 cmake \
+if test $exec_prefix = NONE; then
+	exec_prefix=$prefix
+fi
+CMAKE_COMMAND="$2 cmake \
 	-DCMAKE_INSTALL_PREFIX=$prefix \
 	-DINSTALL_PREFIX=$prefix \
 	-DINSTALL_EXEC_PREFIX=$exec_prefix \
@@ -210,5 +213,10 @@ $2 cmake \
 	-DINSTALL_PSDIR=$psdir \
 	$ax_cv_cmake_flags \
 	$1 \
-    $srcdir
+    $srcdir"
+CMAKE_COMMAND=$(eval echo $CMAKE_COMMAND)
+CMAKE_COMMAND=$(eval echo $CMAKE_COMMAND)
+CMAKE_COMMAND=$(eval echo $CMAKE_COMMAND)
+CMAKE_COMMAND=$(eval echo $CMAKE_COMMAND)
+eval $CMAKE_COMMAND
 ])dnl AX_CMAKE
