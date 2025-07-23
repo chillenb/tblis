@@ -1,4 +1,4 @@
-prefix=@prefix@
+prefix=@TBLIS_PREFIX@
 exec_prefix=${prefix}
 includedir=${prefix}/include
 libdir=${exec_prefix}/lib
@@ -7,6 +7,6 @@ Name: TBLIS
 Description: The Tensor-Based Library Instatiation Software
 Version: @TBLIS_VERSION@
 Cflags: -I${includedir}
-Libs: -L${libdir} -ltblis
+Libs: -L${libdir}/tblis -L${libdir} -ltblis
 Requires.private: @PKGCONFIG_REQUIRES@
 Libs.private: @PKGCONFIG_LIBS@

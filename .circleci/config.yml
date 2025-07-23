@@ -25,11 +25,14 @@ workflows:
     jobs:
       # Default:
       # - build:
-      #     TEST_INSTALL: 1
+      #     TEST_INSTALL: 0
+      #     TEST_EXTERNAL: 0
+      #     TEST_SUBPROJECT: 0
+      #     TEST_PKGCONFIG: 0
       #     OS: linux
       #     CC: gcc
       #     OOT: 0
-      #     RUN_TEST: 1
+      #     RUN_TESTS: 0
       #     THREADING: none
       #     BUILD_CONFIG: auto
       #     PACKAGES: ''
@@ -40,13 +43,20 @@ workflows:
           OOT: 1
           THREADING: pthread
           COMPAT: 1
+          RUN_TESTS: 1
+          TEST_INSTALL: 1
       - build:
           CC: clang
           THREADING: openmp
           PACKAGES: 'clang libomp-dev'
+          TEST_EXTERNAL: 1
+          TEST_PKGCONFIG: 1
+          TEST_SUBPROJECT: 1
+          TEST_INSTALL: 1
       - build:
           OS: macos
           CC: clang
+          RUN_TESTS: 1
           #THREADING: dispatch
       - build:
           THREADING: openmp
@@ -78,10 +88,19 @@ jobs:
         default: 0
       RUN_TESTS:
         type: integer
-        default: 1
+        default: 0
       TEST_INSTALL:
         type: integer
-        default: 1
+        default: 0
+      TEST_EXTERNAL:
+        type: integer
+        default: 0
+      TEST_PKGCONFIG:
+        type: integer
+        default: 0
+      TEST_SUBPROJECT:
+        type: integer
+        default: 0
       THREADING:
         type: string
         default: none
@@ -134,6 +153,9 @@ jobs:
             export THREADING="<< parameters.THREADING >>"
             export RUN_TESTS="<< parameters.RUN_TESTS >>"
             export TEST_INSTALL="<< parameters.TEST_INSTALL >>"
+            export TEST_PKGCONFIG="<< parameters.TEST_PKGCONFIG >>"
+            export TEST_EXTERNAL="<< parameters.TEST_EXTERNAL >>"
+            export TEST_SUBPROJECT="<< parameters.TEST_SUBPROJECT >>"
             export BLIS="<< parameters.BLIS >>"
             export COMPAT="<< parameters.COMPAT >>"
 
@@ -156,12 +178,15 @@ jobs:
             echo "THREADING         = $THREADING"
             echo "RUN_TESTS         = $RUN_TESTS"
             echo "TEST_INSTALL      = $TEST_INSTALL"
+            echo "TEST_PKGCONFIG    = $TEST_PKGCONFIG"
+            echo "TEST_EXTERNAL     = $TEST_EXTERNAL"
+            echo "TEST_SUBPROJECT   = $TEST_SUBPROJECT"
             echo "BLIS              = $BLIS"
             echo "BUILD_DIR         = $BUILD_DIR"
             echo "SRC_DIR           = $SRC_DIR"
             echo "COMPAT            = $COMPAT"
 
-            CONFIG_ARGS="--prefix=$BUILD_DIR/usr --enable-threading=$THREADING CC=$CC CXX=$CXX --with-blis-config-family=$BUILD_CONFIG"
+            CONFIG_ARGS="--prefix=$BUILD_DIR/usr --enable-shared --enable-static --enable-threading=$THREADING CC=$CC CXX=$CXX --with-blis-config-family=$BUILD_CONFIG"
 
             if [ $BLIS = external ]; then
                 mkdir ../blis
@@ -201,5 +226,36 @@ jobs:
             fi
 
             if [ $TEST_INSTALL -eq 1 ]; then
-                $CXX -std=c++20 -o test_install $SRC_DIR/test/test_install.cxx -I$BUILD_DIR/usr/include -L$BUILD_DIR/usr/lib -ltblis
+                $CXX -std=c++20 -o test_install $SRC_DIR/test/install/test_install.cxx -I$BUILD_DIR/usr/include -L$BUILD_DIR/usr/lib -ltblis
             fi
+
+            if [ $TEST_EXTERNAL -eq 1 ]; then
+                mkdir ../external
+                cd ../external
+                cp $SRC_DIR/test/install/test_install.cxx .
+                cp $SRC_DIR/test/external/CMakeLists.txt .
+                CMAKE_PREFIX_PATH=$BUILD_DIR/usr/lib/cmake cmake .
+                make
+            fi
+
+            if [ $TEST_SUBPROJECT -eq 1 ]; then
+                mkdir ../subproject
+                cd ../subproject
+                cp $SRC_DIR/test/install/test_install.cxx .
+                cp $SRC_DIR/test/subproject/CMakeLists.txt .
+                cp -R $SOURCE_DIR tblis
+                cmake .
+                make
+            fi
+
+            if [ $TEST_PKGCONFIG -eq 1 ]; then
+                mkdir ../pkgconfig
+                cd ../pkgconfig
+                cp $SRC_DIR/test/install/test_install.cxx .
+                cp $SRC_DIR/test/pkgconfig/Makefile .
+                PKG_CONFIG_PATH=$BUILD_DIR/usr/lib/pkgconfig make shared
+                rm $BUILD_DIR/usr/lib/libtblis.so*
+                PKG_CONFIG_PATH=$BUILD_DIR/usr/lib/pkgconfig make static
+            fi
+
+

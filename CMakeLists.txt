@@ -8,7 +8,6 @@ set(TBLIS_VERSION "${TBLIS_VERSION_RAW}")
 string(REPLACE "." ";" TBLIS_VERSION_RAW ${TBLIS_VERSION_RAW})
 list(GET TBLIS_VERSION_RAW 0 TBLIS_VERSION_MAJOR)
 list(GET TBLIS_VERSION_RAW 1 TBLIS_VERSION_MINOR)
-set(prefix ${INSTALL_PREFIX})
 
 project(TBLIS
     VERSION "${TBLIS_VERSION}"
@@ -30,6 +29,8 @@ include(CheckCCompilerFlag)
 include(FetchContent)
 include(ExternalProject)
 include(CheckLibraryExists)
+
+set(TBLIS_PREFIX ${INSTALL_PREFIX})
 
 if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tblis/external/marray/CMakeLists.txt)
     message(FATAL_ERROR "MArray not found -- have you checkout out the git submodules?")
@@ -349,22 +350,22 @@ else()
 endif()
 
 # extract the blis configuration name (at CMake configure time) into BLIS_CONFIG_FAMILY
-execute_process(
-    INPUT_FILE ${BLIS_BINARY_DIR}/config.mk
-    COMMAND grep ^CONFIG_NAME
-    COMMAND awk "{ print \$3 }"
-    OUTPUT_VARIABLE BLIS_CONFIG_FAMILY
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+file(READ "${BLIS_BINARY_DIR}/config.mk" CONFIG_MK_CONTENTS)
+string(REGEX MATCH "CONFIG_NAME[^\n]*" CONFIG_LINE "${CONFIG_MK_CONTENTS}")
+string(REGEX MATCHALL "[^ \t]+" CONFIG_TOKENS "${CONFIG_LINE}")
+list(GET CONFIG_TOKENS 2 BLIS_CONFIG_FAMILY)
 message(STATUS "BLIS configuration: ${BLIS_CONFIG_FAMILY}")
 
-# make an imported library target for BLIS
-add_library(blis STATIC IMPORTED GLOBAL)
-set_target_properties(blis PROPERTIES
-    IMPORTED_LOCATION ${BLIS_INSTALL_DIR}/lib/libblis.a
-    INTERFACE_INCLUDE_DIRECTORIES ${BLIS_INSTALL_DIR}/include
+# make an interface library target for BLIS
+add_library(tblis-blis INTERFACE)
+target_link_libraries(tblis-blis INTERFACE
+    $<BUILD_INTERFACE:${BLIS_INSTALL_DIR}/lib/libblis.a>
+    $<INSTALL_INTERFACE:${INSTALL_LIBDIR}/tblis/libblis.a>
 )
-add_dependencies(blis blis-install)
+target_include_directories(tblis-blis INTERFACE
+    $<BUILD_INTERFACE:${BLIS_INSTALL_DIR}/include>
+)
+add_dependencies(tblis-blis blis-install)
 
 set(TBLIS_PLUGIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/tblis/plugin)
 file(MAKE_DIRECTORY ${TBLIS_PLUGIN_DIR})
@@ -372,6 +373,7 @@ file(MAKE_DIRECTORY ${TBLIS_PLUGIN_DIR})
 get_target_property(TCI_INCLUDES tci-static INTERFACE_INCLUDE_DIRECTORIES)
 list(TRANSFORM TCI_INCLUDES PREPEND -I)
 set(PLUGIN_FLAGS
+    -I${BLIS_INSTALL_DIR}/include
     -I${CMAKE_CURRENT_SOURCE_DIR}
     -I${CMAKE_CURRENT_SOURCE_DIR}/tblis
     -I${CMAKE_CURRENT_SOURCE_DIR}/tblis/external/marray
@@ -414,10 +416,10 @@ add_custom_target(plugin-build
     DEPENDS ${TBLIS_PLUGIN_DIR}/lib/${BLIS_CONFIG_FAMILY}/libblis_tblis.a
 )
 
-add_library(tblis-plugin STATIC IMPORTED GLOBAL)
-set_target_properties(tblis-plugin PROPERTIES
-    IMPORTED_LOCATION ${TBLIS_PLUGIN_DIR}/lib/${BLIS_CONFIG_FAMILY}/libblis_tblis.a
-    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/tblis/plugin
+add_library(tblis-plugin INTERFACE)
+target_link_libraries(tblis-plugin INTERFACE
+    $<BUILD_INTERFACE:${TBLIS_PLUGIN_DIR}/lib/${BLIS_CONFIG_FAMILY}/libblis_tblis.a>
+    $<INSTALL_INTERFACE:${INSTALL_LIBDIR}/tblis/libblis_tblis.a>
 )
 add_dependencies(tblis-plugin plugin-build)
 
@@ -426,6 +428,9 @@ add_dependencies(tblis-plugin plugin-build)
 # Configure TBLIS
 #
 ###############################################################################
+
+set(PKGCONFIG_LIBS "-lblis_tblis -lblis")
+set(PKGCONFIG_REQUIRES "TCI >= 1.0")
 
 configure_file(tblis/tblis_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/tblis/tblis_config.h @ONLY)
 configure_file(tblis.pc.in ${CMAKE_CURRENT_BINARY_DIR}/tblis.pc @ONLY)
@@ -482,14 +487,12 @@ set(TBLIS_SOURCES
 )
 
 add_library(tblis-objects OBJECT ${TBLIS_SOURCES})
-target_link_libraries(tblis-objects PUBLIC tblis-plugin blis marray tci-static)
+target_link_libraries(tblis-objects PUBLIC tblis-plugin tblis-blis marray tci-static)
 target_include_directories(tblis-objects PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-    $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>
-)
-target_include_directories(tblis-objects PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tblis/external/stl_ext>
+    $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>
 )
 set_target_properties(tblis-objects PROPERTIES
     POSITION_INDEPENDENT_CODE 1
@@ -505,34 +508,58 @@ target_compile_options(tblis-objects
 )
 add_dependencies(tblis-objects plugin-build)
 
+set(TBLIS_TARGET_SPECS "")
+
 if (ENABLE_SHARED)
-    add_library(tblis SHARED $<TARGET_OBJECTS:tblis-objects>)
-    target_link_libraries(tblis PUBLIC ${PUBLIC_LIBS} tblis-plugin blis marray tci-static PRIVATE ${PRIVATE_LIBS})
-    set_target_properties(tblis PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib
-        OUTPUT_NAME tblis
-        INSTALL_NAME_DIR ${INSTALL_LIBDIR}
-    )
-    list(APPEND TBLIS_TARGETS tblis)
-    target_include_directories(tblis PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-        $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>
-    )
+    list(APPEND TBLIS_TARGET_SPECS "tblis SHARED")
 endif()
 
 if (ENABLE_STATIC)
-    add_library(tblis-static STATIC $<TARGET_OBJECTS:tblis-objects>)
-    target_link_libraries(tblis-static PUBLIC ${PUBLIC_LIBS} tblis-plugin blis marray tci-static PRIVATE ${PRIVATE_LIBS})
-    set_target_properties(tblis-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-    set_target_properties(tblis-static PROPERTIES OUTPUT_NAME tblis)
-    list(APPEND TBLIS_TARGETS tblis-static)
-    target_include_directories(tblis-static PUBLIC
+    list(APPEND TBLIS_TARGET_SPECS "tblis-static STATIC")
+endif()
+
+foreach(TGT_SPEC IN LISTS TBLIS_TARGET_SPECS)
+    string(REPLACE " " ";"  TGT_SPEC "${TGT_SPEC}")
+    list(GET TGT_SPEC 0 TARGET_NAME)
+    list(GET TGT_SPEC 1 LIB_TYPE)
+
+    add_library(${TARGET_NAME} ${LIB_TYPE} $<TARGET_OBJECTS:tblis-objects>)
+
+    if(LIB_TYPE STREQUAL "SHARED")
+        target_link_libraries(${TARGET_NAME}
+            PRIVATE ${PRIVATE_LIBS} tblis-plugin tblis-blis
+            PUBLIC ${PUBLIC_LIBS} marray tci-static
+        )
+    else()
+        target_link_libraries(${TARGET_NAME}
+            PUBLIC ${PUBLIC_LIBS} tblis-plugin tblis-blis marray tci-static
+            PRIVATE ${PRIVATE_LIBS}
+        )
+    endif()
+
+    set_target_properties(${TARGET_NAME} PROPERTIES
+        OUTPUT_NAME tblis
+    )
+
+    if(LIB_TYPE STREQUAL "SHARED")
+        set_target_properties(${TARGET_NAME} PROPERTIES
+            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib
+            INSTALL_NAME_DIR ${INSTALL_LIBDIR}
+        )
+    else()
+        set_target_properties(${TARGET_NAME} PROPERTIES
+            ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib
+        )
+    endif()
+
+    list(APPEND TBLIS_TARGETS ${TARGET_NAME})
+
+    target_include_directories(${TARGET_NAME} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
         $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>
     )
-endif()
+endforeach()
 
 list(GET TBLIS_TARGETS 0 TBLIS_MAIN_TARGET)
 list(REVERSE TBLIS_TARGETS)
@@ -556,17 +583,36 @@ target_sources(${TBLIS_MAIN_TARGET}
         tblis/frame/3t/mult.h
         tblis/tblis.h
 )
+
 target_sources(${TBLIS_MAIN_TARGET}
     INTERFACE FILE_SET config_header TYPE HEADERS
     BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/tblis
     FILES
         ${CMAKE_CURRENT_BINARY_DIR}/tblis/tblis_config.h
 )
+
 target_sources(${TBLIS_MAIN_TARGET}
     INTERFACE FILE_SET public_headers TYPE HEADERS
     BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
     FILES tblis.h
 )
+
+# If building a shared tblis library, the user will also
+# need to link the static BLIS and plugin libraries
+if(ENABLE_STATIC)
+    install(FILES
+        ${BLIS_INSTALL_DIR}/lib/libblis.a
+        ${TBLIS_PLUGIN_DIR}/lib/${BLIS_CONFIG_FAMILY}/libblis_tblis.a
+        DESTINATION ${INSTALL_LIBDIR}/tblis
+    )
+
+    target_link_directories(tblis-static BEFORE
+        PUBLIC ${INSTALL_LIBDIR}/tblis
+    )
+
+    list(APPEND TBLIS_TARGETS tblis-plugin)
+    list(APPEND TBLIS_TARGETS tblis-blis)
+endif()
 
 install(TARGETS ${TBLIS_TARGETS}
     EXPORT tblis-targets
