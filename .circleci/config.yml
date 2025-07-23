@@ -224,6 +224,11 @@ jobs:
             $CC --version
             $CC -v
 
+            if [ $BLIS = external ] && [ -f _deps/blis-build/config.mk ]; then
+                echo "BLIS was supposed to be external but it was downloaded instead"
+                exit 1
+            fi
+
             make V=1 VERBOSE=1 -j4
             make install
 
