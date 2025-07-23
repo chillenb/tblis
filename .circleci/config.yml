@@ -255,7 +255,7 @@ jobs:
                 cd ../subproject
                 cp $SRC_DIR/test/install/test_install.cxx .
                 cp $SRC_DIR/test/subproject/CMakeLists.txt .
-                cp -R $SOURCE_DIR tblis
+                cp -R $SRC_DIR tblis
                 cmake .
                 make
             fi
