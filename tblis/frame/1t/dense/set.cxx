@@ -13,7 +13,7 @@ void set(type_t type, const communicator& comm, const cntx_t* cntx,
          const len_vector& len_A,
          const scalar& alpha, char* A, const stride_vector& stride_A)
 {
-    bli_init_once();
+    bli_init();
 
     if (len_A.size() == 0)
     {

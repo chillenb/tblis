@@ -15,7 +15,7 @@ void dot(type_t type, const communicator& comm, const cntx_t* cntx,
          bool conj_B, const char* B, const stride_vector& stride_B_AB,
          char* result)
 {
-    bli_init_once();
+    bli_init();
 
     bool empty = len_AB.size() == 0;
 

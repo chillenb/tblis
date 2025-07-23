@@ -14,7 +14,7 @@ void reduce(type_t type, const communicator& comm, const cntx_t* cntx, reduce_t 
             const char* A, const stride_vector& stride_A,
             char* result, len_type& idx)
 {
-    bli_init_once();
+    bli_init();
 
     bool empty = len_A.size() == 0;
 

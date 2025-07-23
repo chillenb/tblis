@@ -65,10 +65,6 @@ void packm_blk_dpd(const obj_t*     c,
     auto buffer = bli_packm_alloc( size_p, cntl, thread );
     bli_obj_set_buffer( buffer, p );
 
-    // Check parameters.
-    if ( bli_error_checking_is_enabled() )
-        bli_packm_int_check( c, p );
-
     auto p_cast  = static_cast<char*>(bli_obj_buffer(p));
     auto rscat_c = convert_and_align<stride_type>(p_cast + panel_size);
     auto cscat_c = rscat_c + iter_dim;

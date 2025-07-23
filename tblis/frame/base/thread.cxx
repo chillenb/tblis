@@ -120,7 +120,7 @@ void thread_blis(const communicator& comm,
 
     if (comm.master())
     {
-        array = bli_sba_checkout_array(comm.num_threads());
+        array = new array_t[comm.num_threads()];
         gl_comm = bli_thrcomm_create(bli_thread_get_thread_impl(), nullptr, comm.num_threads());
     }
 
@@ -146,7 +146,7 @@ void thread_blis(const communicator& comm,
     if (comm.master())
     {
         bli_thrcomm_free(nullptr, gl_comm);
-        bli_sba_checkin_array(array);
+        delete array;
     }
 }
 

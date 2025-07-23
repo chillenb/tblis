@@ -46,10 +46,6 @@ void packm_blk_bsmtc(const obj_t*     c,
     auto buffer = bli_packm_alloc( size_p, cntl, thread );
     bli_obj_set_buffer( buffer, p );
 
-    // Check parameters.
-    if ( bli_error_checking_is_enabled() )
-        bli_packm_int_check( c, p );
-
     auto  c_cast        = static_cast<char*>(bli_obj_buffer(c));
     auto  panel_dim_off = bli_obj_row_off(c);
     auto  panel_len_off = bli_obj_col_off(c);

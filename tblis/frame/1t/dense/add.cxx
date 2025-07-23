@@ -293,7 +293,7 @@ void add(type_t type, const communicator& comm, const cntx_t* cntx,
          const stride_vector& stride_B_,
          const stride_vector& stride_B_AB_)
 {
-    bli_init_once();
+    bli_init();
 
     len_type n_AB = stl_ext::prod(len_AB_);
     len_type n_A = stl_ext::prod(len_A_);

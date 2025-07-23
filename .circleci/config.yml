@@ -204,7 +204,7 @@ jobs:
                 git checkout FETCH_HEAD
                 ./configure --prefix=$(pwd)/usr --disable-shared --enable-static -t$THREADING auto
                 make -j4 install
-                CONFIG_ARGS="$CONFIG_ARGS --with-blis-dir=$(pwd)/usr"
+                CONFIG_ARGS="$CONFIG_ARGS --with-blis-prefix=$(pwd)/usr"
                 cd $BUILD_DIR
             fi
 

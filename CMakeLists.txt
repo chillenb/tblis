@@ -281,35 +281,57 @@ set(ENABLE_STATIC ${ENABLE_STATIC_OLD})
 
 ###############################################################################
 #
-# Find BLIS and set up plugin
+# Find and/or set up BLIS
 #
 ###############################################################################
 
 file(STRINGS blis-git-tag BLIS_GIT_TAG)
 set(BLIS_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/blis")
 
-FetchContent_Declare(blis
-    GIT_REPOSITORY https://github.com/flame/blis.git
-    GIT_TAG ${BLIS_GIT_TAG}
-    FIND_PACKAGE_ARGS 2.0...99.0
-)
-
 message(CHECK_START "Looking for BLIS")
 
-FetchContent_MakeAvailable(blis)
-FetchContent_GetProperties(
-  blis
-  SOURCE_DIR BLIS_SOURCE_DIR
-  BINARY_DIR BLIS_BINARY_DIR
-  POPULATED BLIS_POPULATED
-)
+find_package(BLIS QUIET)
 
-set(BLIS_DEBUG_FLAG "")
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(BLIS_DEBUG_FLAG "--enable-debug=noopt")
+if(BLIS_FOUND)
+    set(BLIS_TARGET BLIS::BLIS)
+    message(CHECK_PASS "found via cmake")
+    #not sure what to do here
+    #set(BLIS_BINARY_DIR ...)
+    add_custom_target(blis-install)
+else()
+    find_package(PkgConfig)
+    set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH ON)
+    pkg_check_modules(BLIS IMPORTED_TARGET blis>=2.0)
 endif()
 
-if (BLIS_POPULATED)
+if(BLIS_FOUND)
+    set(BLIS_TARGET PkgConfig::BLIS)
+    message(CHECK_PASS "found via pkgconfig")
+    set(BLIS_BINARY_DIR "${BLIS_PREFIX}/share/blis")
+    set(BLIS_INSTALL_DIR ${BLIS_PREFIX})
+    add_custom_target(blis-install)
+    target_include_directories(${BLIS_TARGET} INTERFACE
+        $<BUILD_INTERFACE:${BLIS_INSTALL_DIR}/include>
+    )
+else()
+    FetchContent_Declare(blis
+        GIT_REPOSITORY https://github.com/flame/blis.git
+        GIT_TAG ${BLIS_GIT_TAG}
+    )
+
+    FetchContent_MakeAvailable(blis)
+    FetchContent_GetProperties(
+      blis
+      SOURCE_DIR BLIS_SOURCE_DIR
+      BINARY_DIR BLIS_BINARY_DIR
+      POPULATED BLIS_POPULATED
+    )
+
+    set(BLIS_DEBUG_FLAG "")
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(BLIS_DEBUG_FLAG "--enable-debug=noopt")
+    endif()
+
     message(CHECK_PASS "downloaded")
 
     if (NOT EXISTS ${BLIS_BINARY_DIR}/config.mk)
@@ -344,10 +366,32 @@ if (BLIS_POPULATED)
             ${BLIS_INSTALL_DIR}/lib/libblis.a
             ${BLIS_INSTALL_DIR}/include/blis/blis.h
     )
-else()
-    message(CHECK_PASS "found")
-    set(BLIS_BINARY_DIR ${BLIS_LIBDIR}/../share/blis)
+
+    # extract the blis configuration name (at CMake configure time) into BLIS_CONFIG_FAMILY
+    file(READ "${BLIS_BINARY_DIR}/config.mk" CONFIG_MK_CONTENTS)
+    string(REGEX MATCH "CONFIG_NAME[^\n]*" CONFIG_LINE "${CONFIG_MK_CONTENTS}")
+    string(REGEX MATCHALL "[^ \t]+" CONFIG_TOKENS "${CONFIG_LINE}")
+    list(GET CONFIG_TOKENS 2 BLIS_CONFIG_FAMILY)
+    message(STATUS "BLIS configuration: ${BLIS_CONFIG_FAMILY}")
+
+    # make an interface library target for BLIS
+    add_library(tblis-blis INTERFACE)
+    target_link_libraries(tblis-blis INTERFACE
+        $<BUILD_INTERFACE:${BLIS_INSTALL_DIR}/lib/libblis.a>
+        $<INSTALL_INTERFACE:${INSTALL_LIBDIR}/tblis/libblis_core.a>
+    )
+    target_include_directories(tblis-blis INTERFACE
+        $<BUILD_INTERFACE:${BLIS_INSTALL_DIR}/include>
+    )
+    add_dependencies(tblis-blis blis-install)
+    set(BLIS_TARGET tblis-blis)
 endif()
+
+###############################################################################
+#
+# Set up BLIS plugin
+#
+###############################################################################
 
 # extract the blis configuration name (at CMake configure time) into BLIS_CONFIG_FAMILY
 file(READ "${BLIS_BINARY_DIR}/config.mk" CONFIG_MK_CONTENTS)
@@ -356,21 +400,11 @@ string(REGEX MATCHALL "[^ \t]+" CONFIG_TOKENS "${CONFIG_LINE}")
 list(GET CONFIG_TOKENS 2 BLIS_CONFIG_FAMILY)
 message(STATUS "BLIS configuration: ${BLIS_CONFIG_FAMILY}")
 
-# make an interface library target for BLIS
-add_library(tblis-blis INTERFACE)
-target_link_libraries(tblis-blis INTERFACE
-    $<BUILD_INTERFACE:${BLIS_INSTALL_DIR}/lib/libblis.a>
-    $<INSTALL_INTERFACE:${INSTALL_LIBDIR}/tblis/libblis.a>
-)
-target_include_directories(tblis-blis INTERFACE
-    $<BUILD_INTERFACE:${BLIS_INSTALL_DIR}/include>
-)
-add_dependencies(tblis-blis blis-install)
-
 set(TBLIS_PLUGIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/tblis/plugin)
 file(MAKE_DIRECTORY ${TBLIS_PLUGIN_DIR})
 
 get_target_property(TCI_INCLUDES tci-static INTERFACE_INCLUDE_DIRECTORIES)
+string(REGEX REPLACE ";+" ";" TCI_INCLUDES ${TCI_INCLUDES})
 list(TRANSFORM TCI_INCLUDES PREPEND -I)
 set(PLUGIN_FLAGS
     -I${BLIS_INSTALL_DIR}/include
@@ -434,6 +468,7 @@ set(PKGCONFIG_REQUIRES "TCI >= 1.0")
 
 configure_file(tblis/tblis_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/tblis/tblis_config.h @ONLY)
 configure_file(tblis.pc.in ${CMAKE_CURRENT_BINARY_DIR}/tblis.pc @ONLY)
+configure_file(TBLISConfig.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/TBLISConfig.cmake @ONLY)
 
 set(TBLIS_SOURCES
     tblis/frame/0/add.cxx
@@ -487,7 +522,7 @@ set(TBLIS_SOURCES
 )
 
 add_library(tblis-objects OBJECT ${TBLIS_SOURCES})
-target_link_libraries(tblis-objects PUBLIC tblis-plugin tblis-blis marray tci-static)
+target_link_libraries(tblis-objects PUBLIC tblis-plugin ${BLIS_TARGET} marray tci-static)
 target_include_directories(tblis-objects PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
@@ -527,12 +562,12 @@ foreach(TGT_SPEC IN LISTS TBLIS_TARGET_SPECS)
 
     if(LIB_TYPE STREQUAL "SHARED")
         target_link_libraries(${TARGET_NAME}
-            PRIVATE ${PRIVATE_LIBS} tblis-plugin tblis-blis
+            PRIVATE ${PRIVATE_LIBS} tblis-plugin ${BLIS_TARGET}
             PUBLIC ${PUBLIC_LIBS} marray tci-static
         )
     else()
         target_link_libraries(${TARGET_NAME}
-            PUBLIC ${PUBLIC_LIBS} tblis-plugin tblis-blis marray tci-static
+            PUBLIC ${PUBLIC_LIBS} tblis-plugin ${BLIS_TARGET} marray tci-static
             PRIVATE ${PRIVATE_LIBS}
         )
     endif()
@@ -601,17 +636,24 @@ target_sources(${TBLIS_MAIN_TARGET}
 # need to link the static BLIS and plugin libraries
 if(ENABLE_STATIC)
     install(FILES
-        ${BLIS_INSTALL_DIR}/lib/libblis.a
         ${TBLIS_PLUGIN_DIR}/lib/${BLIS_CONFIG_FAMILY}/libblis_tblis.a
         DESTINATION ${INSTALL_LIBDIR}/tblis
     )
+    if (BLIS_POPULATED)
+        install(FILES
+            ${BLIS_INSTALL_DIR}/lib/libblis.a
+            DESTINATION ${INSTALL_LIBDIR}/tblis/libblis_core.a
+        )
+    endif()
 
     target_link_directories(tblis-static BEFORE
         PUBLIC ${INSTALL_LIBDIR}/tblis
     )
 
     list(APPEND TBLIS_TARGETS tblis-plugin)
-    list(APPEND TBLIS_TARGETS tblis-blis)
+    if (BLIS_POPULATED)
+        list(APPEND TBLIS_TARGETS tblis-blis)
+    endif()
 endif()
 
 install(TARGETS ${TBLIS_TARGETS}

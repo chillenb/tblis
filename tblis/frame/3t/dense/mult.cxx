@@ -201,7 +201,7 @@ void gemm_blis(type_t type, const communicator& comm, const cntx_t* cntx,
     gemm_cntl_t cntl;
     bli_gemm_cntl_init
     (
-      bli_dt_dom_is_complex((num_t)type) ? bli_gemmind_find_avail((num_t)type) : BLIS_NAT,
+      bli_dt_dom_is_complex((num_t)type) ? bli_ind_oper_find_avail(BLIS_GEMM, (num_t)type) : BLIS_NAT,
       BLIS_GEMM,
       &alpo,
       &ao,
@@ -290,7 +290,7 @@ void gemm_bsmtc_blis(type_t type, const communicator& comm, const cntx_t* cntx,
     gemm_cntl_t cntl;
     auto trans = bli_gemm_cntl_init
     (
-      bli_dt_dom_is_complex((num_t)type) ? bli_gemmind_find_avail((num_t)type) : BLIS_NAT,
+      bli_dt_dom_is_complex((num_t)type) ? bli_ind_oper_find_avail(BLIS_GEMM, (num_t)type) : BLIS_NAT,
       BLIS_GEMM,
       &alpo,
       &ao,
@@ -912,7 +912,7 @@ void mult(type_t type, const communicator& comm, const cntx_t* cntx,
           const stride_vector& stride_C_BC,
           const stride_vector& stride_C_ABC)
 {
-    bli_init_once();
+    bli_init();
 
     const len_type ts = type_size[type];
     auto n_AB = stl_ext::prod(len_AB);

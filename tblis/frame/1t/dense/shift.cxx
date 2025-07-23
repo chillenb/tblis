@@ -14,7 +14,7 @@ void shift(type_t type, const communicator& comm, const cntx_t* cntx,
            const scalar& alpha, const scalar& beta,
            bool conj_A, char* A, const stride_vector& stride_A)
 {
-    bli_init_once();
+    bli_init();
 
     bool empty = len_A.size() == 0;
 
