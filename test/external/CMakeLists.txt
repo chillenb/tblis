@@ -3,7 +3,7 @@ set(CMAKE_POLICY_DEFAULT_CMP0174 NEW)
 
 cmake_minimum_required(VERSION 3.23)
 
-project(tblis-external-test LANGUAGES CXX)
+project(tblis-external-test LANGUAGES C CXX)
 
 find_package(TBLIS)
 
