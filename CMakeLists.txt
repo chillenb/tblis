@@ -674,7 +674,7 @@ write_basic_package_version_file(
     VERSION ${CMAKE_PACKAGE_VERSION}
     COMPATIBILITY AnyNewerVersion)
 
-install(FILES "TBLISConfig.cmake" "${CMAKE_CURRENT_BINARY_DIR}/TBLISConfigVersion.cmake"
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/TBLISConfig.cmake" "${CMAKE_CURRENT_BINARY_DIR}/TBLISConfigVersion.cmake"
     DESTINATION ${INSTALL_LIBDIR}/cmake/TBLIS)
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/tblis.pc" DESTINATION ${INSTALL_LIBDIR}/pkgconfig)
