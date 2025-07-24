@@ -326,6 +326,7 @@ else()
       BINARY_DIR BLIS_BINARY_DIR
       POPULATED BLIS_POPULATED
     )
+    set(BLIS_INSTALL_DIR "${BLIS_BINARY_DIR}/usr")
 
     set(BLIS_DEBUG_FLAG "")
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -335,7 +336,6 @@ else()
     message(CHECK_PASS "downloaded")
 
     if (NOT EXISTS ${BLIS_BINARY_DIR}/config.mk)
-
         # configure BLIS at CMake configure time
         message(STATUS "Configuring BLIS")
         execute_process(
@@ -539,7 +539,7 @@ set_target_properties(tblis-objects PROPERTIES
     CXX_EXTENSIONS OFF
 )
 target_compile_options(tblis-objects
-  PRIVATE -Wno-return-type-c-linkage -DMARRAY_ENABLE_ASSERTS -DTBLIS_DEBUG ${OMP_SIMD_FLAG}
+  PRIVATE -DMARRAY_ENABLE_ASSERTS -DTBLIS_DEBUG ${OMP_SIMD_FLAG} $<$<CONFIG:Debug>:-O0>
 )
 add_dependencies(tblis-objects plugin-build)
 
@@ -709,14 +709,14 @@ if(ENABLE_TESTS)
         Catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
         GIT_TAG 2b60af89e23d28eefc081bc930831ee9d45ea58b # v3.8.1
-        FIND_PACKAGE_ARGS
     )
-
     FetchContent_MakeAvailable(Catch2)
+
+    message("Tests linking with: ${TBLIS_STATIC_IF_POSSIBLE}")
 
     add_executable(tblis-test ${TEST_SOURCES})
     target_link_libraries(tblis-test
-        PRIVATE ${TBLIS_STATIC_IF_POSSIBLE} Catch2::Catch2 marray tci-static
+        PUBLIC ${TBLIS_STATIC_IF_POSSIBLE} Catch2::Catch2
     )
     target_include_directories(tblis-test PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tblis/external/stl_ext>
@@ -729,7 +729,7 @@ if(ENABLE_TESTS)
         CXX_EXTENSIONS OFF
     )
     target_compile_options(tblis-test
-        PRIVATE -DMARRAY_ENABLE_ASSERTS -DTBLIS_DEBUG
+        PRIVATE -DMARRAY_ENABLE_ASSERTS -DTBLIS_DEBUG ${OMP_SIMD_FLAG} $<$<CONFIG:Debug>:-O0>
     )
 
 endif()

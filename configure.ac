@@ -37,4 +37,9 @@ AC_ARG_WITH([blis-prefix], AS_HELP_STRING([--with-blis-prefix=dir],
     [Search for BLIS also in the indicated directory.]),
     [BLIS_PREFIX="$with_blis_prefix:"])
 
-AX_CMAKE([], [PKG_CONFIG_PATH="${BLIS_PREFIX}${PKG_CONFIG_PATH}" CMAKE_PREFIX_PATH="${BLIS_PREFIX}${CMAKE_PREFIX_PATH}"])
+BUILD_TYPE=Release
+AC_ARG_ENABLE([debug], AS_HELP_STRING([--enable-debug],
+    [Enable debugging mode.]), [BUILD_TYPE=Debug])
+
+AX_CMAKE([-DCMAKE_BUILD_TYPE=${BUILD_TYPE}],
+         [PKG_CONFIG_PATH="${BLIS_PREFIX}${PKG_CONFIG_PATH}" CMAKE_PREFIX_PATH="${BLIS_PREFIX}${CMAKE_PREFIX_PATH}"])
