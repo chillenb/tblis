@@ -16,5 +16,4 @@ config.status
 stamp-h1
 .dirstamp
 libtool
-Makefile
 download/blis
