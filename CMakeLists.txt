@@ -712,8 +712,6 @@ if(ENABLE_TESTS)
     )
     FetchContent_MakeAvailable(Catch2)
 
-    message("Tests linking with: ${TBLIS_STATIC_IF_POSSIBLE}")
-
     add_executable(tblis-test ${TEST_SOURCES})
     target_link_libraries(tblis-test
         PUBLIC ${TBLIS_STATIC_IF_POSSIBLE} Catch2::Catch2
