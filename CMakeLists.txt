@@ -642,7 +642,8 @@ if(ENABLE_STATIC)
     if (BLIS_POPULATED)
         install(FILES
             ${BLIS_INSTALL_DIR}/lib/libblis.a
-            DESTINATION ${INSTALL_LIBDIR}/tblis/libblis_core.a
+            DESTINATION ${INSTALL_LIBDIR}/tblis
+            RENAME libblis_core.a
         )
     endif()
 

@@ -247,7 +247,7 @@ jobs:
                 cp $SRC_DIR/test/install/test_install.cxx .
                 cp $SRC_DIR/test/external/CMakeLists.txt .
                 CMAKE_PREFIX_PATH=$BUILD_DIR/usr/lib/cmake cmake .
-                make
+                make V=1 VERBOSE=1
             fi
 
             if [ $TEST_SUBPROJECT -eq 1 ]; then
@@ -257,7 +257,7 @@ jobs:
                 cp $SRC_DIR/test/subproject/CMakeLists.txt .
                 cp -R $SRC_DIR tblis
                 cmake .
-                make
+                make V=1 VERBOSE=1
             fi
 
             if [ $TEST_PKGCONFIG -eq 1 ]; then
