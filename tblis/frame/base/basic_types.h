@@ -970,6 +970,26 @@ TBLIS_END_NAMESPACE
 
 #if TBLIS_ENABLE_CPLUSPLUS
 
+#ifdef TBLIS_ENABLE_COMPAT
+
+#include "marray/marray.hpp"
+#include <memory>
+
+TBLIS_BEGIN_NAMESPACE
+
+template <typename T, typename Allocator=std::allocator<T>>
+using tensor = MArray::marray<T, MArray::DYNAMIC, Allocator>;
+
+TBLIS_END_NAMESPACE
+
+#define TBLIS_COMPAT_INLINE template <typename T_=void>
+
+#else //TBLIS_ENABLE_COMPAT
+
+#define TBLIS_COMPAT_INLINE inline
+
+#endif //TBLIS_ENABLE_COMPAT
+
 #include <string>
 
 #include "marray/range.hpp"
@@ -1091,26 +1111,6 @@ inline label_vector idx(const tblis_tensor& A, label_vector&& = label_vector())
 label_vector idx(const std::string& from, label_vector&& to = label_vector());
 
 }
-
-#ifdef TBLIS_ENABLE_COMPAT
-
-#include <marray/marray.hpp>
-#include <memory>
-
-TBLIS_BEGIN_NAMESPACE
-
-template <typename T, typename Allocator=std::allocator<T>>
-using tensor = MArray::marray<T, MArray::DYNAMIC, Allocator>;
-
-TBLIS_END_NAMESPACE
-
-#define TBLIS_COMPAT_INLINE template <typename T_=void>
-
-#else //TBLIS_ENABLE_COMPAT
-
-#define TBLIS_COMPAT_INLINE inline
-
-#endif //TBLIS_ENABLE_COMPAT
 
 #endif //TBLIS_ENABLE_CPLUSPLUS
 
