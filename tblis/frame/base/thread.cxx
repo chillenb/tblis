@@ -116,11 +116,11 @@ void thread_blis(const communicator& comm,
                        bli_obj_width(a), &rntm);
 
     thrcomm_t* gl_comm = nullptr;
+    // This can be NULL if SBA pools aren't used
     array_t* array = nullptr;
 
     if (comm.master())
     {
-        array = new array_t[comm.num_threads()];
         gl_comm = bli_thrcomm_create(bli_thread_get_thread_impl(), nullptr, comm.num_threads());
     }
 
@@ -146,7 +146,6 @@ void thread_blis(const communicator& comm,
     if (comm.master())
     {
         bli_thrcomm_free(nullptr, gl_comm);
-        delete array;
     }
 }
 
