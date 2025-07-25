@@ -279,6 +279,12 @@ add_subdirectory(tblis/external/marray)
 set(ENABLE_SHARED ${ENABLE_SHARED_OLD})
 set(ENABLE_STATIC ${ENABLE_STATIC_OLD})
 
+# Check for known bug in nvc 25.7
+if(CMAKE_CXX_COMPILER_ID STREQUAL NVHPC AND
+   CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 25.7.0)
+    set(TBLIS_LARGE_ATOMIC_WORKAROUND ON)
+endif()
+
 ###############################################################################
 #
 # Find and/or set up BLIS
@@ -463,8 +469,8 @@ add_dependencies(tblis-plugin plugin-build)
 #
 ###############################################################################
 
-set(PKGCONFIG_LIBS "-lblis_tblis -lblis")
-set(PKGCONFIG_REQUIRES "TCI >= 1.0")
+set(PKGCONFIG_LIBS "-L${libdir}/tblis -lblis_tblis -lblis_core")
+set(PKGCONFIG_REQUIRES "tci >= 1.0")
 
 configure_file(tblis/tblis_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/tblis/tblis_config.h @ONLY)
 configure_file(tblis.pc.in ${CMAKE_CURRENT_BINARY_DIR}/tblis.pc @ONLY)

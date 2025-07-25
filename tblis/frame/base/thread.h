@@ -3,6 +3,7 @@
 
 #include "tci.hpp"
 #include "basic_types.h"
+#include "tci/mutex.hpp"
 
 typedef tci_comm tblis_comm;
 extern const tblis_comm* const tblis_single;
@@ -174,6 +175,9 @@ struct atomic_reducer
     std::atomic<atomic_reducer_helper<double>> d;
     std::atomic<atomic_reducer_helper<scomplex>> c;
     std::atomic<atomic_reducer_helper<dcomplex>> z;
+#ifdef TBLIS_LARGE_ATOMIC_WORKAROUND
+    tci::mutex lock;
+#endif
 
     atomic_reducer(reduce_t op)
     : s(reduce_init<float>(op)),
@@ -249,6 +253,48 @@ void atomic_reduce(reduce_t op, std::atomic<atomic_reducer_helper<T>>& x, T y_va
     while (!x.compare_exchange_weak(old, update));
 }
 
+template <typename T>
+void atomic_reduce(reduce_t op, std::atomic<atomic_reducer_helper<T>>& x, T y_val, len_type y_idx, tci::mutex& lock)
+{
+    lock.lock();
+
+    auto old = x.load(std::memory_order_relaxed);
+    auto update = old;
+
+    switch (op)
+    {
+        case REDUCE_SUM:
+            update.first = old.first + y_val;
+            break;
+        case REDUCE_SUM_ABS:
+            update.first = old.first + std::abs(y_val);
+            break;
+        case REDUCE_MAX:
+            if (y_val > old.first)
+                update = {y_val, y_idx};
+            break;
+        case REDUCE_MAX_ABS:
+            if (std::abs(y_val) > old.first)
+                update = {std::abs(y_val), y_idx};
+            break;
+        case REDUCE_MIN:
+            if (y_val < old.first)
+                update = {y_val, y_idx};
+            break;
+        case REDUCE_MIN_ABS:
+            if (std::abs(y_val) < old.first)
+                update = {std::abs(y_val), y_idx};
+            break;
+        case REDUCE_NORM_2:
+            update.first = old.first + y_val;
+            break;
+    }
+
+    x.store(update, std::memory_order_relaxed);
+
+    lock.unlock();
+}
+
 inline void atomic_reduce(reduce_t op, atomic_reducer& x,
                           const tblis_scalar& y_val, len_type y_idx)
 {
@@ -257,7 +303,11 @@ inline void atomic_reduce(reduce_t op, atomic_reducer& x,
         case TYPE_FLOAT:    atomic_reduce(op, x.s, y_val.data.s, y_idx); break;
         case TYPE_DOUBLE:   atomic_reduce(op, x.d, y_val.data.d, y_idx); break;
         case TYPE_SCOMPLEX: atomic_reduce(op, x.c, y_val.data.c, y_idx); break;
+#ifdef TBLIS_LARGE_ATOMIC_WORKAROUND
+        case TYPE_DCOMPLEX: atomic_reduce(op, x.z, y_val.data.z, y_idx, x.lock); break;
+#else
         case TYPE_DCOMPLEX: atomic_reduce(op, x.z, y_val.data.z, y_idx); break;
+#endif
         default: break;
     }
 }
