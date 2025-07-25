@@ -208,8 +208,8 @@ struct atomic_reducer
                 *reinterpret_cast<dcomplex*>(val) = z.first;
                 idx = z.second;
 #else
-                *reinterpret_cast<dcomplex*>(val) = z.first;
-                idx = z.second;
+                *reinterpret_cast<dcomplex*>(val) = z.load().first;
+                idx = z.load().second;
 #endif
                 break;
             default:
