@@ -174,9 +174,11 @@ struct atomic_reducer
     std::atomic<atomic_reducer_helper<float>> s;
     std::atomic<atomic_reducer_helper<double>> d;
     std::atomic<atomic_reducer_helper<scomplex>> c;
-    std::atomic<atomic_reducer_helper<dcomplex>> z;
 #ifdef TBLIS_LARGE_ATOMIC_WORKAROUND
     tci::mutex lock;
+    atomic_reducer_helper<dcomplex> z;
+#else
+    std::atomic<atomic_reducer_helper<dcomplex>> z;
 #endif
 
     atomic_reducer(reduce_t op)
@@ -202,8 +204,13 @@ struct atomic_reducer
                 idx = c.load().second;
                 break;
             case TYPE_DCOMPLEX:
-                *reinterpret_cast<dcomplex*>(val) = z.load().first;
-                idx = z.load().second;
+#ifdef TBLIS_LARGE_ATOMIC_WORKAROUND
+                *reinterpret_cast<dcomplex*>(val) = z.first;
+                idx = z.second;
+#else
+                *reinterpret_cast<dcomplex*>(val) = z.first;
+                idx = z.second;
+#endif
                 break;
             default:
                 break;
@@ -254,11 +261,11 @@ void atomic_reduce(reduce_t op, std::atomic<atomic_reducer_helper<T>>& x, T y_va
 }
 
 template <typename T>
-void atomic_reduce(reduce_t op, std::atomic<atomic_reducer_helper<T>>& x, T y_val, len_type y_idx, tci::mutex& lock)
+void atomic_reduce(reduce_t op, atomic_reducer_helper<T>& x, T y_val, len_type y_idx, tci::mutex& lock)
 {
     lock.lock();
 
-    auto old = x.load(std::memory_order_relaxed);
+    auto old = x;
     auto update = old;
 
     switch (op)
@@ -290,7 +297,7 @@ void atomic_reduce(reduce_t op, std::atomic<atomic_reducer_helper<T>>& x, T y_va
             break;
     }
 
-    x.store(update, std::memory_order_relaxed);
+    x = update;
 
     lock.unlock();
 }
@@ -440,6 +447,17 @@ void reduce(const communicator& comm, reduce_t op, std::atomic<atomic_reducer_he
     len_type tmp2;
     tmp1 = pair.load().first;
     tmp2 = pair.load().second;
+    reduce(comm, op, tmp1, tmp2);
+    pair = {tmp1,tmp2};
+}
+
+template <typename T>
+void reduce(const communicator& comm, reduce_t op, atomic_reducer_helper<T>& pair)
+{
+    T tmp1;
+    len_type tmp2;
+    tmp1 = pair.first;
+    tmp2 = pair.second;
     reduce(comm, op, tmp1, tmp2);
     pair = {tmp1,tmp2};
 }
