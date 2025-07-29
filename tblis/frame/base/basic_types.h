@@ -980,6 +980,8 @@ TBLIS_BEGIN_NAMESPACE
 template <typename T, typename Allocator=std::allocator<T>>
 using tensor = MArray::marray<T, MArray::DYNAMIC, Allocator>;
 
+namespace slice = MArray::slice;
+
 TBLIS_END_NAMESPACE
 
 #define TBLIS_COMPAT_INLINE template <typename T_=void>
