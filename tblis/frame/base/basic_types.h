@@ -84,7 +84,14 @@ typedef _Complex double dcomplex;
             tblis_abort_with_message(fmt, std::forward<Args>(args)...);
     }
 
-    #ifdef TBLIS_DEBUG
+    #ifndef TBLIS_DEBUG
+    #ifndef NDEBUG
+    #define TBLIS_DEBUG 1
+    #else
+    #define TBLIS_DEBUG 0
+    #endif
+
+    #if TBLIS_DEBUG
 
         #define TBLIS_ASSERT(...) \
             tblis_check_assert(TBLIS_STRINGIZE(TBLIS_FIRST_ARG(__VA_ARGS__,0)), __VA_ARGS__)
