@@ -561,7 +561,7 @@ set_target_properties(tblis-objects PROPERTIES
     CXX_EXTENSIONS OFF
 )
 target_compile_options(tblis-objects
-  PRIVATE -DMARRAY_ENABLE_ASSERTS -DTBLIS_DEBUG ${OMP_SIMD_FLAG} $<$<CONFIG:Debug>:-O0>
+  PRIVATE ${OMP_SIMD_FLAG} $<$<CONFIG:Debug>:-O0>
 )
 add_dependencies(tblis-objects plugin-build)
 
