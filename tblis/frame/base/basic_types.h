@@ -1058,7 +1058,7 @@ TBLIS_END_NAMESPACE
 
                 template <typename T, int N, typename D, bool O>
                 tensor_wrapper(MArray::marray_base<T,N,D,O>&& t)
-                : tblis_tensor(t.data(), N, nullptr, nullptr)
+                : tblis_tensor(t.data(), t.dimension(), nullptr, nullptr)
                 {
                     len_buf.assign(t.lengths().begin(), t.lengths().end());
                     stride_buf.assign(t.strides().begin(), t.strides().end());

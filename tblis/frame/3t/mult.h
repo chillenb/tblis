@@ -34,6 +34,10 @@ void mult(const communicator& comm,
     auto C_(C);
     C_.scalar *= beta;
 
+    TBLIS_ASSERT(A.ndim == idx_A.size());
+    TBLIS_ASSERT(B.ndim == idx_B.size());
+    TBLIS_ASSERT(C.ndim == idx_C.size());
+
     tblis_tensor_mult(comm, nullptr, &A_, idx_A.data(), &B, idx_B.data(), &C_, idx_C.data());
 }
 
