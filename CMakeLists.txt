@@ -581,6 +581,7 @@ foreach(TGT_SPEC IN LISTS TBLIS_TARGET_SPECS)
     list(GET TGT_SPEC 1 LIB_TYPE)
 
     add_library(${TARGET_NAME} ${LIB_TYPE} $<TARGET_OBJECTS:tblis-objects>)
+    add_library(TBLIS::${TARGET_NAME} ALIAS ${TARGET_NAME})
 
     if(LIB_TYPE STREQUAL "SHARED")
         target_link_libraries(${TARGET_NAME}
@@ -701,6 +702,11 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/TBLISConfig.cmake" "${CMAKE_CURRENT_B
     DESTINATION ${INSTALL_LIBDIR}/cmake/TBLIS)
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/tblis.pc" DESTINATION ${INSTALL_LIBDIR}/pkgconfig)
+
+export(EXPORT tblis-targets
+    FILE ${CMAKE_CURRENT_BINARY_DIR}/TBLISTargets.cmake
+        NAMESPACE TBLIS::
+)
 
 ###############################################################################
 #
