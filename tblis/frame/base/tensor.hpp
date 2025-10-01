@@ -13,8 +13,8 @@
 #include "stl_ext/type_traits.hpp"
 #include "stl_ext/vector.hpp"
 
-namespace MArray
-{
+MARRAY_BEGIN_NAMESPACE
+
     template <typename T, size_t N>
     short_vector<T,N> operator+(const short_vector<T,N>& lhs,
                                 const short_vector<T,N>& rhs)
@@ -25,7 +25,8 @@ namespace MArray
         res.insert(res.end(), rhs.begin(), rhs.end());
         return res;
     }
-}
+
+MARRAY_END_NAMESPACE
 
 namespace tblis
 {

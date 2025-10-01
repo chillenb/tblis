@@ -44,6 +44,20 @@ typedef _Complex float scomplex;
 typedef _Complex double dcomplex;
 #endif
 
+#ifndef TBLIS_DEBUG
+
+    #ifndef NDEBUG
+
+        #define TBLIS_DEBUG 1
+
+    #else
+
+        #define TBLIS_DEBUG 0
+
+    #endif
+
+#endif
+
 #if TBLIS_ENABLE_CPLUSPLUS
 
     extern "C"
@@ -83,13 +97,6 @@ typedef _Complex double dcomplex;
         if (__builtin_expect(!cond,0))
             tblis_abort_with_message(fmt, std::forward<Args>(args)...);
     }
-
-    #ifndef TBLIS_DEBUG
-    #ifndef NDEBUG
-    #define TBLIS_DEBUG 1
-    #else
-    #define TBLIS_DEBUG 0
-    #endif
 
     #if TBLIS_DEBUG
 
